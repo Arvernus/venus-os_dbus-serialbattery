@@ -15,7 +15,6 @@ import threading
 from typing import Dict
 from semantic_version import Version
 
-
 mbdevs: Dict[int, minimalmodbus.Instrument] = {}
 locks: Dict[int, any] = {}
 
@@ -86,24 +85,24 @@ class iRock(Battery):
         )
 
     def unique_identifier(self) -> str:
+        mbdev = mbdevs[self.address]
+        modbus_version = self.get_modbus_version()
         """
         Used to identify a BMS when multiple BMS are connected
         Provide a unique identifier from the BMS to identify a BMS, if multiple same BMS are connected
         e.g. the serial number
         If there is no such value, please remove this function
         """
-        try:
-            mbdev = minimalmodbus.Instrument(self.port, self.address)
-            mbdev.mode = minimalmodbus.MODE_RTU
-            mbdev.serial.timeout = 1.0
-            mbdev.serial.bytesize = 8      # Bytegröße
-            mbdev.serial.stopbits = 1      # Stoppbits
-            if self.get_modbus_version() == "1.0.0":
-                self.serial_number = mbdev.read_string(21, 6).strip('\x00')
-            else:
-                logger.error("Modbus version not supported")
-        except IOError:
-            pass
+        with locks[self.address]:
+            try:
+                if modbus_version == Version("1.0.0"):
+                    serial_number = mbdev.read_string(21, 6).strip('\x00')
+                    return serial_number
+                else:
+                    logger.error(f"iRock Modbus Version ({modbus_version}) in get_settings not supported")
+                self.serial_number = serial_number
+            except Exception as e:
+                logger.error(f"Can't get iRock settings: {e}")
         return self.serial_number
 
     def get_settings(self):
