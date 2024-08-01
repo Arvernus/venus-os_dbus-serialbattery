@@ -415,14 +415,14 @@ class iRock(Battery):
         with locks[self.address]:
             try:
                 for c in range(self.cell_count):
-                    cell = {}
                     if modbus_version == Version("1.0.0"):
-                            cell.voltage = mbdev.read_float(64 + c * 4, byteorder=3)
-                            cell.balance = mbdev.read_register(66 + c * 4)
+                        voltage = mbdev.read_float(64 + c * 4, byteorder=3)
+                        balance = mbdev.read_register(66 + c * 4)
                     else:
                         logger.error(f"iRock Modbus Version ({modbus_version}) in read_cell_data not supported")
                         return False
-                    self.cells[c] = cell
+                    self.cells[c].voltage = voltage
+                    self.cells[c].balance = balance
             except Exception as e:
                 logger.error(f"Can't get iRock Cell Data: {e}")
                 return False
