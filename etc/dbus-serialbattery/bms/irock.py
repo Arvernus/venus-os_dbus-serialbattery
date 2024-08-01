@@ -16,7 +16,6 @@ from typing import Dict
 from semantic_version import Version
 
 
-logger.setLevel(logging.DEBUG)
 mbdevs: Dict[int, minimalmodbus.Instrument] = {}
 locks: Dict[int, any] = {}
 
