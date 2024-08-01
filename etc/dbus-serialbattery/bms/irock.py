@@ -21,7 +21,7 @@ locks: Dict[int, any] = {}
 class iRock(Battery):
     def __init__(self, port, baud, address):
         super(iRock, self).__init__(port, baud, address)
-        self.address = int.from_bytes(address, byteorder="big")
+        self.address = address
         self.type = self.BATTERYTYPE
         self.serial_number: str = None
         self.hardware_name: str = None
@@ -36,16 +36,16 @@ class iRock(Battery):
         """
         logger.debug("Testing on slave address " + str(self.address))
         found = False
-        if self.address not in locks:
-            locks[self.address] = threading.Lock()
+        if int.from_bytes(self.address, byteorder="big") not in locks:
+            locks[int.from_bytes(self.address, byteorder="big")] = threading.Lock()
 
         # TODO: We need to lock not only based on the address, but based on the port as soon as multiple BMSs
         # are supported on the same serial interface. Then locking on the port will be enough.
 
-        with locks[self.address]:
+        with locks[int.from_bytes(self.address, byteorder="big")]:
             mbdev = minimalmodbus.Instrument(
                 self.port,
-                slaveaddress=self.address,
+                slaveaddress=int.from_bytes(self.address, byteorder="big"),
                 mode="rtu",
                 close_port_after_each_call=True,
                 debug=False,
@@ -55,10 +55,10 @@ class iRock(Battery):
             mbdev.serial.baudrate = 9600
             # yes, 400ms is long but the BMS is sometimes really slow in responding, so this is a good compromise
             mbdev.serial.timeout = 0.4
-            mbdevs[self.address] = mbdev
+            mbdevs[int.from_bytes(self.address, byteorder="big")] = mbdev
             
         modbus_version = self.get_modbus_version()
-        with locks[self.address]:
+        with locks[int.from_bytes(self.address, byteorder="big")]:
             try:
                 if modbus_version == Version("1.0.0"):
                     hardware_name = mbdev.read_string(9, 8).strip('\x00')
@@ -85,7 +85,7 @@ class iRock(Battery):
         )
 
     def unique_identifier(self) -> str:
-        mbdev = mbdevs[self.address]
+        mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
         modbus_version = self.get_modbus_version()
         """
         Used to identify a BMS when multiple BMS are connected
@@ -93,7 +93,7 @@ class iRock(Battery):
         e.g. the serial number
         If there is no such value, please remove this function
         """
-        with locks[self.address]:
+        with locks[int.from_bytes(self.address, byteorder="big")]:
             try:
                 if modbus_version == Version("1.0.0"):
                     serial_number = mbdev.read_string(21, 6).strip('\x00')
@@ -112,7 +112,7 @@ class iRock(Battery):
         Return True if success, False for failure
         """
 
-        mbdev = mbdevs[self.address]
+        mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
         modbus_version = self.get_modbus_version()
 
         # MANDATORY values to set
@@ -129,7 +129,7 @@ class iRock(Battery):
         self.capacity = VALUE_FROM_BMS
         """
 
-        with locks[self.address]:
+        with locks[int.from_bytes(self.address, byteorder="big")]:
             try:
                 if modbus_version == Version("1.0.0"):
                     cell_count = mbdev.read_register(35)
@@ -174,7 +174,7 @@ class iRock(Battery):
         # serial number of the battery (str)
         self.serial_number = VALUE_FROM_BMS
         """
-        with locks[self.address]:
+        with locks[int.from_bytes(self.address, byteorder="big")]:
             try:
                 if modbus_version == Version("1.0.0"):
                     max_battery_charge_current = mbdev.read_float(46, byteorder=3)
@@ -230,7 +230,7 @@ class iRock(Battery):
 
     def read_status_data(self):
 
-        mbdev = mbdevs[self.address]
+        mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
         modbus_version = self.get_modbus_version()
         # Integrate a check to be sure, that the received data is from the BMS type you are making this driver for
 
@@ -255,7 +255,7 @@ class iRock(Battery):
         # status of the battery if discharging is enabled (bool)
         self.discharge_fet = VALUE_FROM_BMS
         """
-        with locks[self.address]:
+        with locks[int.from_bytes(self.address, byteorder="big")]:
             try:
                 if modbus_version == Version("1.0.0"):
                     voltage = mbdev.read_float(36, byteorder=3)
@@ -401,7 +401,7 @@ class iRock(Battery):
 
     def read_cell_data(self):
 
-        mbdev = mbdevs[self.address]
+        mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
         modbus_version = self.get_modbus_version()
 
         # MANDATORY values to set
@@ -410,7 +410,7 @@ class iRock(Battery):
         for c in range(self.cell_count):
             self.cells[c].voltage = VALUE_FROM_BMS
         """
-        with locks[self.address]:
+        with locks[int.from_bytes(self.address, byteorder="big")]:
             try:
                 for c in range(self.cell_count):
                     if modbus_version == Version("1.0.0"):
@@ -448,9 +448,9 @@ class iRock(Battery):
         return True
         
     def get_modbus_version(self) -> Version:
-        mbdev = mbdevs[self.address]
+        mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
 
-        with locks[self.address]:
+        with locks[int.from_bytes(self.address, byteorder="big")]:
             try:
                 modbus_version = Version.coerce(str(mbdev.read_string(1, 8).strip('\x00')))
                 logger.debug(f"iRock ModBus Version is {str(modbus_version)}")
