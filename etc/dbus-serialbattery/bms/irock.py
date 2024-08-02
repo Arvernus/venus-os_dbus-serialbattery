@@ -133,7 +133,7 @@ class iRock(Battery):
             try:
                 if modbus_version == Version("1.0.0"):
                     cell_count = mbdev.read_register(35)
-                    capacity = mbdev.read_float(42, byteorder=3)
+                    capacity = mbdev.read_float(36, byteorder=3)
                 else:
                     logger.error(f"iRock Modbus Version ({modbus_version}) in get_settings not supported")
                     return False
@@ -258,9 +258,9 @@ class iRock(Battery):
         with locks[int.from_bytes(self.address, byteorder="big")]:
             try:
                 if modbus_version == Version("1.0.0"):
-                    voltage = mbdev.read_float(36, byteorder=3)
-                    current = mbdev.read_float(38, byteorder=3)
-                    soc = mbdev.read_float(40, byteorder=3)
+                    voltage = mbdev.read_float(38, byteorder=3)
+                    current = mbdev.read_float(40, byteorder=3)
+                    soc = mbdev.read_float(42, byteorder=3)
                     temp_1 = mbdev.read_float(54, byteorder=3)
                     temp_2 = mbdev.read_float(56, byteorder=3)
                     temp_3 = mbdev.read_float(58, byteorder=3)
