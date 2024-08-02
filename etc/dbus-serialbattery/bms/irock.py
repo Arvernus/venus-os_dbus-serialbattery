@@ -27,7 +27,25 @@ class iRock(Battery):
         self.hardware_name: str = None
 
     BATTERYTYPE = "iRock"
+    
+    def custom_name(self) -> str:
+        """
+        Shown in the GUI under `Device -> Name`
+        Overwritten, if the user set a custom name via GUI
 
+        :return: the connection name
+        """
+        name: str = f"{self.type} ({self.serial_number})"
+        return name
+    
+    def product_name(self) -> str:
+        """
+        Shown in the GUI under `Device -> Product`
+
+        :return: the connection name
+        """
+        return f"{self.type}"
+    
     def test_connection(self):
         """
         call a function that will connect to the battery, send a command and retrieve the result.
@@ -67,7 +85,7 @@ class iRock(Battery):
                     self.hardware_name = hardware_name
                     self.hardware_version = hardware_version
                     if self.hardware_name is not None:
-                        self.hardware_name
+                        self.type = self.hardware_name
                     logger.debug(f"Found iRock of type \"{self.hardware_name} {self.hardware_version}\" on port {self.port} ({self.address})")
                 else:
                     logger.debug(f"Found iRock of type \"{self.hardware_name} {self.hardware_version}\" on port {self.port} ({self.address})")
