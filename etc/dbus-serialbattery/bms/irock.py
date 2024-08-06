@@ -6,12 +6,16 @@ import utils
 import minimalmodbus
 import serial
 import threading
-from typing import Dict, List
+from typing import Dict, List, Tuple, Any
 from semantic_version import Version
 from enum import Enum
+import functools
+import time
+from datetime import datetime, timedelta
 
 mbdevs: Dict[int, minimalmodbus.Instrument] = {}
-locks: Dict[int, any] = {}
+port_locks: Dict[str, Any] = {}
+address_locks: Dict[str, Any] = {}
 
 class iRockFunctionType(Enum):
     SETTING = 1
@@ -25,7 +29,6 @@ MODBUS_REGISTERS = [
                 "manufacturer_id": {"name": "Manufacturer ID", "address": 0, "length": 1, "function": iRockFunctionType.SETTING, "type": int},
                 "modbus_version": {"name": "Modbus Version", "address": 1, "length": 16, "function": iRockFunctionType.SETTING, "type": Version},
                 "hardware_name": {"name": "Hardware Name", "address": 9, "length": 16, "function": iRockFunctionType.SETTING, "type": str},
-                "type": {"name": "Hardware Name", "address": 9, "length": 16, "function": iRockFunctionType.SETTING, "type": str},
                 "hardware_version": {"name": "Hardware Version", "address": 17, "length": 8, "function": iRockFunctionType.SETTING, "type": Version},
                 "serial_number": {"name": "Serial Number", "address": 21, "length": 12, "function": iRockFunctionType.SETTING, "type": str},
                 "sw_version": {"name": "Software Version", "address": 27, "length": 16, "function": iRockFunctionType.SETTING, "type": Version},
@@ -48,11 +51,31 @@ MODBUS_REGISTERS = [
     }
 ]
 
-MODBUS_VERSIONS = [register["version"] for register in MODBUS_REGISTERS]
+MODBUS_VERSIONS: List[Version] = [register["version"] for register in MODBUS_REGISTERS]
 
 HARDWARE_FUNCTIONS = {
+    "iRock": ["manufacturer_id", "modbus_version", "hardware_name"],
     "iRock 424": ["manufacturer_id", "modbus_version", "hardware_name", "hardware_version", "serial_number", "sw_version", "number_of_cells", "capacity", "battery_voltage", "battery_soc", "max_charge_current", "max_discharge_current", "max_cell_voltage", "min_cell_voltage"]
 }
+
+def timed_lru_cache(days: float = 0, seconds: float = 0, microseconds: float = 0, milliseconds: float = 0, minutes: float = 0, hours: float = 0, weeks: float = 0, maxsize: int = 128):
+    def wrapper(func):
+        func = functools.lru_cache(maxsize=maxsize)(func)
+        func.lifetime = timedelta(days=days, seconds=seconds, microseconds=microseconds, milliseconds=milliseconds, minutes=minutes, hours=hours, weeks=weeks)
+        func.expiration = datetime.now() - func.lifetime
+
+        @functools.wraps(func)
+        def wrapped_func(*args, **kwargs):
+            if datetime.now() >= func.expiration:
+                func.cache_clear()
+                func.expiration = datetime.now() + func.lifetime
+            result = func(*args, **kwargs)
+            if result is None:
+                func.cache_clear()
+            return result
+        
+        return wrapped_func
+    return wrapper
 
 class iRock(Battery):
     def __init__(self, port, baud, address):
@@ -72,28 +95,33 @@ class iRock(Battery):
     def test_connection(self):
         logger.debug("Testing on slave address " + str(self.address))
         found = False
-        if int.from_bytes(self.address, byteorder="big") not in locks:
-            locks[int.from_bytes(self.address, byteorder="big")] = threading.Lock()
-
-        with locks[int.from_bytes(self.address, byteorder="big")]:
-            mbdev = minimalmodbus.Instrument(
-                self.port,
-                slaveaddress=int.from_bytes(self.address, byteorder="big"),
-                mode="rtu",
-                close_port_after_each_call=True,
-                debug=False,
-            )
-            mbdev.serial.parity = minimalmodbus.serial.PARITY_NONE
-            mbdev.serial.stopbits = serial.STOPBITS_ONE
-            mbdev.serial.baudrate = 9600
-            mbdev.serial.timeout = 0.4
-            mbdevs[int.from_bytes(self.address, byteorder="big")] = mbdev
+        if self.port not in port_locks:
+            port_locks[self.port] = threading.Lock()
+        if self.address not in address_locks:
+            address_locks[self.address] = threading.Lock()
+        with port_locks[self.port]:
+            with address_locks[self.address]:
+                mbdev = minimalmodbus.Instrument(
+                    self.port,
+                    slaveaddress=int.from_bytes(self.address, byteorder="big"),
+                    mode="rtu",
+                    close_port_after_each_call=True,
+                    debug=False,
+                )
+                mbdev.serial.parity = minimalmodbus.serial.PARITY_NONE
+                mbdev.serial.stopbits = serial.STOPBITS_ONE
+                mbdev.serial.baudrate = 9600
+                mbdev.serial.timeout = 1
+                mbdevs[int.from_bytes(self.address, byteorder="big")] = mbdev
         try:
             test: bool = True
-            test = test and self.get_field("type")
             test = test and self.get_field("hardware_name")
+            if self.hardware_name is not None:
+                self.type = self.hardware_name
             test = test and self.get_field("hardware_version")
             logger.debug(f"Found iRock of type \"{self.hardware_name} {self.hardware_version}\" on port {self.port} ({self.address})")
+            if test == True:
+                found = True
         except Exception as e:
             logger.info(f"Testing failed for iRock on port {self.port} ({self.address}): {e}")
 
@@ -108,68 +136,71 @@ class iRock(Battery):
 
     def unique_identifier(self) -> str:
         mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
-        modbus_version = self.get_modbus_version()
-        with locks[int.from_bytes(self.address, byteorder="big")]:
-            try:
-                if modbus_version == Version("1.0.0"):
-                    serial_number = mbdev.read_string(21, 6).strip('\x00')
-                    return serial_number
-                else:
-                    logger.error(f"iRock Modbus Version ({modbus_version}) in get_settings not supported")
-                self.serial_number = serial_number
-            except Exception as e:
-                logger.error(f"Can't get iRock settings: {e}")
+        modbus_version = self.get_modbus_version(self.address)
+        with port_locks[self.port]:
+            with address_locks[self.address]:
+                try:
+                    if modbus_version == Version("1.0.0"):
+                        serial_number = mbdev.read_string(21, 6).strip('\x00')
+                        return serial_number
+                    else:
+                        logger.error(f"iRock Modbus Version ({modbus_version}) in get_settings not supported")
+                    self.serial_number = serial_number
+                except Exception as e:
+                    logger.error(f"Can't get iRock settings: {e}")
         return self.serial_number
 
     def get_settings(self):
         mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
-        modbus_version = self.get_modbus_version()
-        with locks[int.from_bytes(self.address, byteorder="big")]:
-            try:
-                if modbus_version == Version("1.0.0"):
-                    cell_count = mbdev.read_register(35)
-                    capacity = mbdev.read_float(36, byteorder=3)
-                else:
-                    logger.error(f"iRock Modbus Version ({modbus_version}) in get_settings not supported")
+        modbus_version = self.get_modbus_version(self.address)
+        with port_locks[self.port]:
+            with address_locks[self.address]:
+                try:
+                    if modbus_version == Version("1.0.0"):
+                        cell_count = mbdev.read_register(35)
+                        capacity = mbdev.read_float(36, byteorder=3)
+                    else:
+                        logger.error(f"iRock Modbus Version ({modbus_version}) in get_settings not supported")
+                        return False
+                    self.cell_count = cell_count
+                    self.capacity = capacity
+                    logger.debug(f"iRock Cell Count is {cell_count}")
+                    logger.debug(f"iRock Capacity is {capacity}")
+                except Exception as e:
+                    logger.warn(f"Can't get iRock settings: {e}")
                     return False
-                self.cell_count = cell_count
-                self.capacity = capacity
-                logger.debug(f"iRock Cell Count is {cell_count}")
-                logger.debug(f"iRock Capacity is {capacity}")
-            except Exception as e:
-                logger.warn(f"Can't get iRock settings: {e}")
-                return False
 
-        with locks[int.from_bytes(self.address, byteorder="big")]:
-            try:
-                if modbus_version == Version("1.0.0"):
-                    max_battery_charge_current = mbdev.read_float(46, byteorder=3)
-                    max_battery_discharge_current = mbdev.read_float(48, byteorder=3)
-                    hardware_version = mbdev.read_string(17, 4).strip('\x00')
-                    hardware_name = mbdev.read_string(9, 8).strip('\x00')
-                    serial_number = mbdev.read_string(21, 6).strip('\x00')
-                    max_battery_voltage = utils.MAX_CELL_VOLTAGE * self.cell_count
-                    min_battery_voltage = utils.MIN_CELL_VOLTAGE * self.cell_count
-                else:
-                    logger.error(f"iRock Modbus Version ({modbus_version}) in get_settings not supported")
+        with port_locks[self.port]:
+            with address_locks[self.address]:
+                try:
+                    if modbus_version == Version("1.0.0"):
+                        max_battery_charge_current = mbdev.read_float(46, byteorder=3)
+                        max_battery_discharge_current = mbdev.read_float(48, byteorder=3)
+                        hardware_version = mbdev.read_string(17, 4).strip('\x00')
+                        hardware_name = mbdev.read_string(9, 8).strip('\x00')
+                        serial_number = mbdev.read_string(21, 6).strip('\x00')
+                        max_battery_voltage = utils.MAX_CELL_VOLTAGE * self.cell_count
+                        min_battery_voltage = utils.MIN_CELL_VOLTAGE * self.cell_count
+                    else:
+                        logger.error(f"iRock Modbus Version ({modbus_version}) in get_settings not supported")
+                        return False
+                    self.max_battery_charge_current = max_battery_charge_current
+                    self.max_battery_discharge_current = max_battery_discharge_current
+                    self.hardware_version = hardware_version
+                    self.hardware_name = hardware_name
+                    self.serial_number = serial_number
+                    self.max_battery_voltage = max_battery_voltage
+                    self.min_battery_voltage = min_battery_voltage
+                    logger.debug(f"iRock Maximal Battery Charge Current is {max_battery_charge_current}")
+                    logger.debug(f"iRock Maximal Battery Discharge Current is {max_battery_discharge_current}")
+                    logger.debug(f"iRock Hardware Version is {hardware_version}")
+                    logger.debug(f"iRock Hardware Name is {hardware_name}")
+                    logger.debug(f"iRock Serial Number is {serial_number}")
+                    logger.debug(f"iRock Maximal Battery Voltage is {max_battery_voltage}")
+                    logger.debug(f"iRock Minimal Battery Voltage is {min_battery_voltage}")
+                except Exception as e:
+                    logger.error(f"Can't get iRock settings: {e}")
                     return False
-                self.max_battery_charge_current = max_battery_charge_current
-                self.max_battery_discharge_current = max_battery_discharge_current
-                self.hardware_version = hardware_version
-                self.hardware_name = hardware_name
-                self.serial_number = serial_number
-                self.max_battery_voltage = max_battery_voltage
-                self.min_battery_voltage = min_battery_voltage
-                logger.debug(f"iRock Maximal Battery Charge Current is {max_battery_charge_current}")
-                logger.debug(f"iRock Maximal Battery Discharge Current is {max_battery_discharge_current}")
-                logger.debug(f"iRock Hardware Version is {hardware_version}")
-                logger.debug(f"iRock Hardware Name is {hardware_name}")
-                logger.debug(f"iRock Serial Number is {serial_number}")
-                logger.debug(f"iRock Maximal Battery Voltage is {max_battery_voltage}")
-                logger.debug(f"iRock Minimal Battery Voltage is {min_battery_voltage}")
-            except Exception as e:
-                logger.error(f"Can't get iRock settings: {e}")
-                return False
 
         if len(self.cells) == 0:
             for _ in range(self.cell_count):
@@ -184,94 +215,113 @@ class iRock(Battery):
 
     def read_status_data(self):
         mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
-        modbus_version = self.get_modbus_version()
-        with locks[int.from_bytes(self.address, byteorder="big")]:
-            try:
-                if modbus_version == Version("1.0.0"):
-                    voltage = mbdev.read_float(38, byteorder=3)
-                    current = mbdev.read_float(40, byteorder=3)
-                    soc = mbdev.read_float(42, byteorder=3)
-                    temp_1 = mbdev.read_float(54, byteorder=3)
-                    temp_2 = mbdev.read_float(56, byteorder=3)
-                    temp_3 = mbdev.read_float(58, byteorder=3)
-                    temp_4 = mbdev.read_float(60, byteorder=3)
-                    charge_fet = True
-                    discharge_fet = True
-                else:
-                    logger.error(f"iRock Modbus Version ({modbus_version}) in get_settings not supported")
+        modbus_version = self.get_modbus_version(self.address)
+        with port_locks[self.port]:
+            with address_locks[self.address]:
+                try:
+                    if modbus_version == Version("1.0.0"):
+                        voltage = mbdev.read_float(38, byteorder=3)
+                        current = mbdev.read_float(40, byteorder=3)
+                        soc = mbdev.read_float(42, byteorder=3)
+                        temp_1 = mbdev.read_float(54, byteorder=3)
+                        temp_2 = mbdev.read_float(56, byteorder=3)
+                        temp_3 = mbdev.read_float(58, byteorder=3)
+                        temp_4 = mbdev.read_float(60, byteorder=3)
+                        charge_fet = True
+                        discharge_fet = True
+                    else:
+                        logger.error(f"iRock Modbus Version ({modbus_version}) in get_settings not supported")
+                        return False
+                    self.voltage = voltage
+                    self.current = current
+                    self.soc = soc
+                    self.temp_1 = self.to_temp(1, temp_1)
+                    self.temp_2 = self.to_temp(2, temp_2)
+                    self.temp_3 = self.to_temp(3, temp_3)
+                    self.temp_4 = self.to_temp(4, temp_4)
+                    self.charge_fet = charge_fet
+                    self.discharge_fet = discharge_fet
+                except Exception as e:
+                    logger.error(f"Can't get iRock settings: {e}")
                     return False
-                self.voltage = voltage
-                self.current = current
-                self.soc = soc
-                self.temp_1 = self.to_temp(1, temp_1)
-                self.temp_2 = self.to_temp(2, temp_2)
-                self.temp_3 = self.to_temp(3, temp_3)
-                self.temp_4 = self.to_temp(4, temp_4)
-                self.charge_fet = charge_fet
-                self.discharge_fet = discharge_fet
-            except Exception as e:
-                logger.error(f"Can't get iRock settings: {e}")
-                return False
         return True
 
     def read_cell_data(self):
         mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
-        modbus_version = self.get_modbus_version()
-        with locks[int.from_bytes(self.address, byteorder="big")]:
-            try:
-                for c in range(self.cell_count):
-                    if modbus_version == Version("1.0.0"):
-                        voltage = mbdev.read_float(64 + c * 4, byteorder=3)
-                        balance = mbdev.read_register(66 + c * 4)
-                    else:
-                        logger.error(f"iRock Modbus Version ({modbus_version}) in read_cell_data not supported")
-                        return False
-                    self.cells[c].voltage = voltage
-                    self.cells[c].balance = balance
-            except Exception as e:
-                logger.error(f"Can't get iRock Cell Data: {e}")
-                return False
+        modbus_version = self.get_modbus_version(self.address)
+        with port_locks[self.port]:
+            with address_locks[self.address]:
+                try:
+                    for c in range(self.cell_count):
+                        if modbus_version == Version("1.0.0"):
+                            voltage = mbdev.read_float(64 + c * 4, byteorder=3)
+                            balance = mbdev.read_register(66 + c * 4)
+                        else:
+                            logger.error(f"iRock Modbus Version ({modbus_version}) in read_cell_data not supported")
+                            return False
+                        self.cells[c].voltage = voltage
+                        self.cells[c].balance = balance
+                except Exception as e:
+                    logger.error(f"Can't get iRock Cell Data: {e}")
+                    return False
         return True
     
-    def get_modbus_version(self) -> Version:
-        mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
+    @timed_lru_cache(seconds=60)
+    def get_modbus_version(self, address: str) -> Version:
+        mbdev = mbdevs[int.from_bytes(address, byteorder="big")]
 
-        with locks[int.from_bytes(self.address, byteorder="big")]:
-            try:
-                modbus_version = Version.coerce(str(mbdev.read_string(1, 8).strip('\x00')))
-                logger.debug(f"iRock ModBus Version is {str(modbus_version)}")
-                return modbus_version
-            except Exception as e:
-                logger.warn(f"Can't get iRock Modbus Version: {e}")
-    
+        try:
+            with port_locks[self.port]:
+                with locks[int.from_bytes(address, byteorder="big")]:
+                    modbus_version = Version.coerce(str(mbdev.read_string(1, 8).strip('\x00')))
+                    if modbus_version is None:
+                        logger.error("Can't get iRock Modbus Version")
+                        return None
+                    elif modbus_version.major == 0:
+                        logger.error("iRock ModBus Version 0.x.x not supported")
+                        return None
+                    logger.debug(f"iRock ModBus Version is {str(modbus_version)}")
+                    return modbus_version
+        except Exception as e:
+            logger.warn(f"Can't get iRock Modbus Version: {e}")
+            return None
+                
+    @timed_lru_cache(seconds=1)
     def get_field(self, name: str) -> bool:
         mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
-        modbusVersion = self.get_modbus_version()
-
-        if modbusVersion in MODBUS_VERSIONS:
-            for modbusRegister in MODBUS_REGISTERS:
-                if modbusRegister["version"] == modbusVersion:
-                    for fieldname, data in modbusRegister["register"][name].items():
-                        if fieldname == name:
-                            if name in HARDWARE_FUNCTIONS[self.type] or self.type == "iRock":
-                                with locks[int.from_bytes(self.address, byteorder="big")]:
+        modbusVersion: Version = self.get_modbus_version(self.address)
+        
+        for modbusRegister in MODBUS_REGISTERS:
+            if modbusRegister['version'].major == modbusVersion.major and modbusRegister['version'].minor == modbusVersion.minor:
+                for fieldname, fielddata in modbusRegister['register'].items():
+                    if fieldname == name:
+                        supported_hardware_functions = list(set(HARDWARE_FUNCTIONS.get(self.type) + HARDWARE_FUNCTIONS.get("iRock")))
+                        if supported_hardware_functions is None:
+                            logger.warn(f"iRock Hardware Type \"{self.type}\" not supported")
+                            return False
+                        if name in supported_hardware_functions:
+                            with port_locks[self.port]:
+                                with address_locks[self.address]:
                                     try:
-                                        if modbusRegister["type"] == str:
-                                            result = mbdev.read_string(data["address"], data["length"]).strip('\x00')
-                                        if modbusRegister["type"] == int:
-                                            result = mbdev.read_register(data["address"])
-                                        if modbusRegister["type"] == float:
-                                            result = mbdev.read_float(data["address"], number_of_registers= data["length"], byteorder=3)
-                                        if modbusRegister["type"] == Version:
-                                            result = Version.coerce(str(mbdev.read_string(data["address"], data["length"]).strip('\x00')))
+                                        logger.debug(f"iRock field {name} to be updated")
+                                        if fielddata['type'] == str:
+                                            result = mbdev.read_string(fielddata["address"], fielddata["length"]).strip('\x00')
+                                        elif fielddata['type'] == int:
+                                            result = mbdev.read_register(fielddata["address"])
+                                        elif fielddata['type'] == float:
+                                            result = mbdev.read_float(fielddata["address"], number_of_registers= fielddata["length"], byteorder=3)
+                                        elif fielddata['type'] == Version:
+                                            result = Version.coerce(str(mbdev.read_string(fielddata["address"], fielddata["length"]).strip('\x00')))
+                                        else:
+                                            logger.warn(f"iRock field type for field {name} not supported")
+                                            return False
                                         setattr(self, name, result)
-                                        logger.debug(f"iRock field {name}: {result}")
+                                        logger.info(f"iRock field {name}: {result}")
                                         return True
                                     except Exception as e:
                                         logger.warn(f"Can't get iRock field {name}: {e}")
-                            else:
-                                logger.warn(f"iRock field {name} not supported for {self.type}")
-                    logger.warn(f"iRock field {name} not found")
-        else:
-            logger.warn(f"ModBus Version {modbusVersion} not supported")
+                        else:
+                            logger.warn(f"iRock field {name} not supported for {self.type}")
+                logger.warn(f"iRock field {name} not found")
+        logger.warn(f"ModBus Version {modbusVersion} not supported")
         return False
