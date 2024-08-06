@@ -6,7 +6,7 @@ import utils
 import minimalmodbus
 import serial
 import threading
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Any
 from semantic_version import Version
 from enum import Enum
 import functools
