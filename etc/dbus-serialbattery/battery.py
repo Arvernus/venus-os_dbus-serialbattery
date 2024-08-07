@@ -192,8 +192,27 @@ class Battery(ABC):
         # display errors in the GUI
         # https://github.com/victronenergy/veutil/blob/master/inc/veutil/ve_regs_payload.h
         # https://github.com/victronenergy/veutil/blob/master/src/qt/bms_error.cpp
-        self.state = 0
-        self.error_code = None
+        self.state: int = 0
+        """
+        State to show in the GUI
+        Can block charge/discharge
+        """
+
+        self.error_code: Union[int, None] = None
+        """
+        Error code to show in the GUI
+        Does not block charge/discharge
+        """
+
+        self.error_code_last_reset_check: int = 0
+        """
+        Timestamp when it was last checked, if the error could be reset
+        """
+
+        self.error_timestamps: list = []
+        """
+        List of timestamps when an error occurred
+        """
 
         self.custom_field: str = None
         """
@@ -641,9 +660,8 @@ class Battery(ABC):
                     self.max_voltage_start_time = None
 
                     if self.soc_calc <= utils.SOC_LEVEL_TO_RESET_VOLTAGE_LIMIT:
-                        # set state to error, to show in the GUI that something is wrong
-                        self.state = 10
-                        self.error_code = 8
+                        # set error code, to show in the GUI that something is wrong
+                        self.manage_error_code(8)
 
                         # write to log, that reset to float was not possible
                         logger.error(
@@ -864,9 +882,8 @@ class Battery(ABC):
             )
             self.charge_mode = "Error, please check the logs!"
 
-            # set state to error, to show in the GUI that something is wrong
-            self.state = 10
-            self.error_code = 8
+            # set error code, to show in the GUI that something is wrong
+            self.manage_error_code(8)
 
             exception_type, exception_object, exception_traceback = sys.exc_info()
             file = exception_traceback.tb_frame.f_code.co_filename
@@ -1069,9 +1086,8 @@ class Battery(ABC):
             )
             self.charge_mode = "Error, please check the logs!"
 
-            # set state to error, to show in the GUI that something is wrong
-            self.state = 10
-            self.error_code = 8
+            # set error code, to show in the GUI that something is wrong
+            self.manage_error_code(8)
 
             exception_type, exception_object, exception_traceback = sys.exc_info()
             file = exception_traceback.tb_frame.f_code.co_filename
@@ -1301,9 +1317,8 @@ class Battery(ABC):
                 False,
             )
         except Exception:
-            # set state to error, to show in the GUI that something is wrong
-            self.state = 10
-            self.error_code = 8
+            # set error code, to show in the GUI that something is wrong
+            self.manage_error_code(8)
 
             logger.error(
                 "calcMaxChargeCurrentReferringToCellVoltage(): Error while executing,"
@@ -1353,9 +1368,8 @@ class Battery(ABC):
                 True,
             )
         except Exception:
-            # set state to error, to show in the GUI that something is wrong
-            self.state = 10
-            self.error_code = 8
+            # set error code, to show in the GUI that something is wrong
+            self.manage_error_code(8)
 
             logger.error(
                 "calcMaxChargeCurrentReferringToCellVoltage(): Error while executing,"
@@ -1410,9 +1424,8 @@ class Battery(ABC):
                     )
             return min(temps[0], temps[1])
         except Exception:
-            # set state to error, to show in the GUI that something is wrong
-            self.state = 10
-            self.error_code = 8
+            # set error code, to show in the GUI that something is wrong
+            self.manage_error_code(8)
 
             logger.error(
                 "calcMaxChargeCurrentReferringToTemperature(): Error while executing,"
@@ -1467,9 +1480,8 @@ class Battery(ABC):
                     )
             return min(temps[0], temps[1])
         except Exception:
-            # set state to error, to show in the GUI that something is wrong
-            self.state = 10
-            self.error_code = 8
+            # set error code, to show in the GUI that something is wrong
+            self.manage_error_code(8)
 
             logger.error(
                 "calcMaxDischargeCurrentReferringToTemperature(): Error while executing,"
@@ -1510,9 +1522,8 @@ class Battery(ABC):
                 True,
             )
         except Exception:
-            # set state to error, to show in the GUI that something is wrong
-            self.state = 10
-            self.error_code = 8
+            # set error code, to show in the GUI that something is wrong
+            self.manage_error_code(8)
 
             logger.error(
                 "calcMaxChargeCurrentReferringToSoc(): Error while executing,"
@@ -1552,9 +1563,8 @@ class Battery(ABC):
                 True,
             )
         except Exception:
-            # set state to error, to show in the GUI that something is wrong
-            self.state = 10
-            self.error_code = 8
+            # set error code, to show in the GUI that something is wrong
+            self.manage_error_code(8)
 
             logger.error(
                 "calcMaxDischargeCurrentReferringToSoc: Error while executing,"
@@ -2024,18 +2034,35 @@ class Battery(ABC):
         }
 
         # start monitoring
-        self._dbusmonitor = DbusMonitor(
-            dbus_tree, valueChangedCallback=self._dbus_value_changed
-        )
+        try:
+            self._dbusmonitor = DbusMonitor(
+                dbus_tree, valueChangedCallback=self._dbus_value_changed
+            )
+        except Exception:
+            # set to None to avoid crashing, fallback to battery current
+            utils.EXTERNAL_CURRENT_SENSOR_DBUS_DEVICE = None
+            utils.EXTERNAL_CURRENT_SENSOR_DBUS_PATH = None
+            (
+                exception_type,
+                exception_object,
+                exception_traceback,
+            ) = sys.exc_info()
+            file = exception_traceback.tb_frame.f_code.co_filename
+            line = exception_traceback.tb_lineno
+            logger.error(
+                "Exception occurred: "
+                + f"{repr(exception_object)} of type {exception_type} in {file} line #{line}"
+            )
 
     def _dbus_value_changed(
         self, dbusServiceName, dbusPath, dict, changes, deviceInstance
     ):
+        # check for external current changes
         if (
             dbusServiceName == utils.EXTERNAL_CURRENT_SENSOR_DBUS_DEVICE
             and dbusPath == utils.EXTERNAL_CURRENT_SENSOR_DBUS_PATH
         ):
-            self.current_external = round(changes["Value"], 2)
+            self.current_external = round(changes["Value"], 3)
             logger.debug(
                 f"dbusServiceName: {dbusServiceName} - dbusPath: {dbusPath} - value: {changes['Value']}"
             )
@@ -2045,9 +2072,53 @@ class Battery(ABC):
         Get the current from the battery.
         If an external current sensor is connected, use that value.
         """
+        logger.debug(
+            f"current: {self.current} - current_external: {self.current_external}"
+        )
         if self.current_external is not None:
             return self.current_external
         return self.current
+
+    def manage_error_code(self, error_code: int = 8) -> None:
+        """
+        This method is used to process errors.
+        It sets the error code after 100 errors within 24 hours.
+
+        :param error_code: The error code to display
+        """
+        self.error_timestamps.append(int(time()))
+
+        # only keep last 100 errors
+        if len(self.error_timestamps) > 100:
+            # remove first element
+            self.error_timestamps.pop(0)
+
+        # check if
+        #     there are more or equal to 100 errors
+        #     the first error in the list is within the last 24 hours
+        #     the error code is different from the current error
+        if (
+            len(self.error_timestamps) >= 100
+            and int(time()) - self.error_timestamps[0] <= 86400
+            and self.error_code != error_code
+        ):
+            # set error code
+            self.error_code = error_code
+
+    def manage_error_code_reset(self) -> None:
+        """
+        This method is used to reset the error code.
+        """
+        # check if
+        #     there are more or equal to 100 errors
+        #     the first error in the list is not within the last 24 hours
+        #     the error code is not already None
+        if (
+            len(self.error_timestamps) >= 100
+            and int(time()) - self.error_timestamps[0] > 86400
+            and self.error_code is not None
+        ):
+            self.error_code = None
 
     def log_cell_data(self) -> bool:
         if logger.getEffectiveLevel() > logging.INFO and len(self.cells) == 0:

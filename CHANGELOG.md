@@ -66,6 +66,7 @@
 
 * Added: `History()` class that holds all BMS history values by @mr-manuel
 * Added: Automatically increase polling time, if polling take too long by @mr-manuel
+* Added: Daren BMS by @cpttinkering
 * Added: Multiple BMS on one USB to RS485/Modbus adapter now possible. The BMS needs to be able to set different addresses to each battery by @mr-manuel
 * Added: Send telemetry data to see which driver versions and BMS are used the most. Can be disabled in the `config.ini` by @mr-manuel
 * Changed: Call `get_settings()` in `test_connection()` for all battery classes, removed `get_settings()` call from `setup_vedbus()` by @mr-manuel
@@ -78,6 +79,7 @@
 * Changed: Renogy BMS - Use port as unique identifier, since it's not possible to change any values on this BMS by @mr-manuel
 * Changed: Reworked, documented and cleaned up a lot of code by @mr-manuel
 * Changed: Set default charge/discharge current from utils in main battery class by @mr-manuel
+* Changed: Show non blocking errors only, if more than 100 occured in the last 24 hours and do not block inverting/charging by @mr-manuel
 * Changed: The setting `HELTEC_MODBUS_ADDR` was replaced by `MODBUS_ADDRESSES` in the `config.default.ini` by @mr-manuel
 * Changed: Updated `battery_template.py` and added tons of descriptions by @mr-manuel
 
