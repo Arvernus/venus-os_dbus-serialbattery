@@ -25,7 +25,7 @@ class iRockFunctionType(Enum):
     STATUS = 2
     CELL = 3
     
-MODBUS_REGISTERS = [
+IROCK_MODBUS_REGISTERS = [
     {
         "version": Version("1.0.0"),
         "register":
@@ -54,7 +54,7 @@ MODBUS_REGISTERS = [
             }
     }
 ]
-MODBUS_CELL_REGISTERS = [
+IROCK_MODBUS_CELL_REGISTERS = [
     {
         "version": Version("1.0.0"),
         "offset": 64,
@@ -67,7 +67,7 @@ MODBUS_CELL_REGISTERS = [
     }
 ]
 
-HARDWARE_FUNCTIONS = {
+IROCK_HARDWARE_FUNCTIONS = {
     "iRock": {
         "register": ["manufacturer_id", "modbus_version", "hardware_name"]},
     "iRock 424": {
@@ -103,6 +103,7 @@ class iRock(Battery):
         Initialize the iRock battery with port, baud, and address.
         """
         super(iRock, self).__init__(port, baud, address)
+        self.poll_interval: int = 5000
         self.address = address
         self.type = self.BATTERYTYPE
         self.serial_number: str = None
@@ -145,6 +146,7 @@ class iRock(Battery):
             found = self.get_field("hardware_name", found)
             if self.hardware_name is not None:
                 self.type = self.hardware_name
+                self.custom_name()
             found = self.get_field("hardware_version", found)
             logger.debug(f"Found iRock of type \"{self.hardware_name} {self.hardware_version}\" on port {self.port} ({self.address})")
         except Exception as e:
@@ -240,7 +242,7 @@ class iRock(Battery):
                     elif modbus_version.major == 0:
                         logger.error("iRock ModBus Version 0.x.x not supported")
                         return None
-                    logger.debug(f"iRock ModBus Version is {str(modbus_version)}")
+                    logger.info(f"iRock ModBus Version is {str(modbus_version)}")
                     return modbus_version
         except Exception as e:
             logger.warning(f"Can't get iRock Modbus Version: {e}")
@@ -258,7 +260,7 @@ class iRock(Battery):
         # Check if the cell is set
         if cell is None:
             # Iterate over each modbus registerlist
-            for modbusRegister in MODBUS_REGISTERS:
+            for modbusRegister in IROCK_MODBUS_REGISTERS:
                 # Check if the version of the modbus registerlist matches the modbus version of the battery
                 if modbusRegister['version'].major == modbusVersion.major and modbusRegister['version'].minor == modbusVersion.minor:
                     # Iterate over each field in the modbus register
@@ -266,8 +268,8 @@ class iRock(Battery):
                         # Check if the field name matches the requested name
                         if fieldname == name:
                             # Get hardware functions for the iRock battery
-                            default_hardware_functions = HARDWARE_FUNCTIONS.get("iRock").get("register")
-                            type_hardware_functions = HARDWARE_FUNCTIONS.get(self.type).get("register")
+                            default_hardware_functions = IROCK_HARDWARE_FUNCTIONS.get("iRock").get("register")
+                            type_hardware_functions = IROCK_HARDWARE_FUNCTIONS.get(self.type).get("register")
                             supported_hardware_functions = list(set(type_hardware_functions + default_hardware_functions))
                             if supported_hardware_functions is None:
                                 logger.warning(f"iRock Hardware Type \"{self.type}\" not supported")
@@ -286,7 +288,7 @@ class iRock(Battery):
                                             elif fielddata['type'] == float:
                                                 result = mbdev.read_float(fielddata["address"], number_of_registers=fielddata["length"], byteorder=3)
                                             elif fielddata['type'] == Version:
-                                                result = Version.coerce(str(mbdev.read_string(fielddata["address"], fielddata["length"]).strip('\x00')))
+                                                result = str(Version.coerce(str(mbdev.read_string(fielddata["address"], fielddata["length"]).strip('\x00'))))
                                             elif fielddata['type'] == bool:
                                                 register = mbdev.read_register(fielddata["address"])
                                                 result = register == 1
@@ -307,7 +309,7 @@ class iRock(Battery):
                     logger.warning(f"iRock field {name} not found")
         else:
             # Iterate over each modbus registerlist
-            for modbusCellRegister in MODBUS_CELL_REGISTERS:
+            for modbusCellRegister in IROCK_MODBUS_CELL_REGISTERS:
                 # Check if the version of the modbus registerlist matches the modbus version of the battery
                 if modbusCellRegister['version'].major == modbusVersion.major and modbusCellRegister['version'].minor == modbusVersion.minor:
                     cellOfset = modbusCellRegister.get("offset")
@@ -317,7 +319,7 @@ class iRock(Battery):
                         # Check if the field name matches the requested name
                         if fieldname == name:
                             # Get hardware functions for the iRock battery
-                            supported_cell_hardware_functions = HARDWARE_FUNCTIONS.get(self.type).get("cell_register")
+                            supported_cell_hardware_functions = IROCK_HARDWARE_FUNCTIONS.get(self.type).get("cell_register")
                             if supported_cell_hardware_functions is None:
                                 logger.warning(f"iRock Hardware Type \"{self.type}\" not supported")
                                 return True
