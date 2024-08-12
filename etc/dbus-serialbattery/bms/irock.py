@@ -71,7 +71,7 @@ IROCK_HARDWARE_FUNCTIONS = {
     "iRock": {
         "register": ["manufacturer_id", "modbus_version", "hardware_name"]},
     "iRock 424": {
-        "register": ["manufacturer_id", "modbus_version", "hardware_name", "hardware_version", "serial_number", "sw_version", "cell_count", "capacity", "voltage", "soc", "max_battery_charge_current", "max_battery_discharge_current", "max_battery_voltage", "min_battery_voltage"],
+        "register": ["manufacturer_id", "modbus_version", "hardware_name", "hardware_version", "serial_number", "sw_version", "cell_count", "capacity", "voltage", "current", "soc", "max_battery_charge_current", "max_battery_discharge_current", "max_battery_voltage", "min_battery_voltage", "temp1"],
         "cell_register": ["voltage", "balance"]},
 }
 
@@ -82,7 +82,7 @@ def timed_lru_cache(days: float = 0, seconds: float = 0, microseconds: float = 0
     def wrapper(func):
         func = functools.lru_cache(maxsize=maxsize)(func)
         func.lifetime = timedelta(days=days, seconds=seconds, microseconds=microseconds, milliseconds=milliseconds, minutes=minutes, hours=hours, weeks=weeks)
-        func.expiration = datetime.now() - func.lifetime
+        func.expiration = datetime.now() + func.lifetime
 
         @functools.wraps(func)
         def wrapped_func(*args, **kwargs):
