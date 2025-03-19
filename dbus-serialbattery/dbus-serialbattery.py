@@ -37,6 +37,7 @@ from bms.eg4_ll import EG4_LL
 from bms.felicity import Felicity
 from bms.heltecmodbus import HeltecModbus
 from bms.hlpdatabms4s import HLPdataBMS4S
+from bms.irock import iRock
 from bms.jkbms import Jkbms
 from bms.jkbms_pb import Jkbms_pb
 from bms.lltjbd import LltJbd
@@ -66,6 +67,7 @@ supported_bms_types = [
     {"bms": Felicity, "baud": 9600, "address": b"\x01"},
     {"bms": HeltecModbus, "baud": 9600, "address": b"\x01"},
     {"bms": HLPdataBMS4S, "baud": 9600},
+    {"bms": iRock, "baud": 9600, "address": b"\x01"},
     {"bms": Jkbms, "baud": 115200},
     {"bms": Jkbms_pb, "baud": 115200, "address": b"\x01"},
     {"bms": LltJbd, "baud": 9600, "address": b"\x00"},
