@@ -5,9 +5,10 @@ on:
     tags:
       # only match pre release
       # matches:
-      # v1.0.0alpha20230507
-      # v1.0.0-beta20230507
-      # v1.0.0-development-20230507
+      # v1.0.20230507-alpha
+      # v1.0.20230507-beta
+      # v1.0.20230507-development
+      # v1.0.20230507-rc1
       - "v[0-9]+.[0-9]+.[0-9]+-?[a-zA-Z]*"
 
 jobs:
@@ -23,11 +24,15 @@ jobs:
           VERSION=$(echo $GITHUB_REF_NAME | sed 's/^v//')
           echo $VERSION
           echo
-          head -n 39 etc/dbus-serialbattery/utils.py | tail -n 3
-          sed -i --regexp-extended --expression="s/[0-9]+\.[0-9]+\.[0-9a-z\_\-]+/$VERSION/" "etc/dbus-serialbattery/utils.py"
-          head -n 39 etc/dbus-serialbattery/utils.py | tail -n 3
+          grep -n "DRIVER_VERSION: str = " dbus-serialbattery/utils.py
+          sed -i --regexp-extended --expression="s/[0-9]+\.[0-9]+\.[0-9a-z\_\-]+/$VERSION/" "dbus-serialbattery/utils.py"
+          grep -n "DRIVER_VERSION: str = " dbus-serialbattery/utils.py
 
-      - name: build release archive
+      - name: Copy changelog
+        run: |
+          cp CHANGELOG.md dbus-serialbattery/
+
+      - name: Build release archive
         run: |
           find . -type f -name "*.py" -exec chmod +x {} \;
           find . -type f -name "*.sh" -exec chmod +x {} \;
@@ -38,7 +43,7 @@ jobs:
             --exclude bms/battery_template.py \
             --exclude bms/revov.py \
             --exclude bms/test_max17853.py \
-            etc/dbus-serialbattery/ \
+            dbus-serialbattery/ \
             rc/
 
       - name: Release

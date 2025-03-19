@@ -26,6 +26,7 @@ If you are using this driver and you are happy with it, please make a donation t
 * [Introduction](https://mr-manuel.github.io/venus-os_dbus-serialbattery_docs/)
 * [Features](https://mr-manuel.github.io/venus-os_dbus-serialbattery_docs/general/features)
 * [Supported BMS](https://mr-manuel.github.io/venus-os_dbus-serialbattery_docs/general/supported-bms)
+* [How to connect and prepare the battery/BMS](https://mr-manuel.github.io/venus-os_dbus-serialbattery_docs/general/connect)
 * [How to install, update, disable, enable and uninstall](https://mr-manuel.github.io/venus-os_dbus-serialbattery_docs/general/install)
 * [How to troubleshoot](https://mr-manuel.github.io/venus-os_dbus-serialbattery_docs/troubleshoot/)
 * [FAQ](https://mr-manuel.github.io/venus-os_dbus-serialbattery_docs/faq/)
@@ -57,37 +58,3 @@ For more details on the Victron dbus interface see [the official victron dbus do
 ## Join the community on Discord
 
 https://discord.gg/YXzFB8rSgx
-
-## GUIv2
-
-To use dbus-serialbattery already with GUIv2 see here: https://github.com/mr-manuel/venus-os_dbus-serialbattery_gui-v2
-
-## Screenshots
-
-### Venus OS
-
-![VenusOS](screenshots/venus-os_001.png)
-![VenusOS](screenshots/venus-os_002.png)
-![VenusOS](screenshots/venus-os_003.png)
-![VenusOS](screenshots/venus-os_004.png)
-![VenusOS](screenshots/venus-os_005.png)
-![VenusOS](screenshots/venus-os_006.png)
-![VenusOS](screenshots/venus-os_007.png)
-![VenusOS](screenshots/venus-os_008.png)
-![VenusOS](screenshots/venus-os_009.png)
-![VenusOS](screenshots/venus-os_010.png)
-![VenusOS](screenshots/venus-os_011.png)
-![VenusOS](screenshots/venus-os_012.png)
-![VenusOS](screenshots/venus-os_013.png)
-
-### VRM Portal
-
-![VenusOS](screenshots/vrm-portal_001.png)
-![VenusOS](screenshots/vrm-portal_002.png)
-![VenusOS](screenshots/vrm-portal_003.png)
-![VenusOS](screenshots/vrm-portal_004.png)
-![VenusOS](screenshots/vrm-portal_005.png)
-![VenusOS](screenshots/vrm-portal_006.png)
-![VenusOS](screenshots/vrm-portal_007.png)
-![VenusOS](screenshots/vrm-portal_008.png)
-![VenusOS](screenshots/vrm-portal_009.png)

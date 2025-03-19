@@ -22,11 +22,21 @@ jobs:
           VERSION=$(echo $GITHUB_REF_NAME | sed 's/^v//')
           echo $VERSION
           echo
-          head -n 39 etc/dbus-serialbattery/utils.py | tail -n 3
-          sed -i --regexp-extended --expression="s/[0-9]+\.[0-9]+\.[0-9a-z\_\-]+/$VERSION/" "etc/dbus-serialbattery/utils.py"
-          head -n 39 etc/dbus-serialbattery/utils.py | tail -n 3
+          grep -n "DRIVER_VERSION: str = " dbus-serialbattery/utils.py
+          sed -i --regexp-extended --expression="s/[0-9]+\.[0-9]+\.[0-9a-z\_\-]+/$VERSION/" "dbus-serialbattery/utils.py"
+          grep -n "DRIVER_VERSION: str = " dbus-serialbattery/utils.py
 
-      - name: build release archive
+      - name: Change telemetry interval for release versions
+        run: |
+          grep -n "self.telemetry_upload_interval: int =" dbus-serialbattery/dbushelper.py
+          sed -i 's/self\.telemetry_upload_interval: int =.*/self.telemetry_upload_interval: int = 60 * 60 * 24  # 1 day/' dbus-serialbattery/dbushelper.py
+          grep -n "self.telemetry_upload_interval: int =" dbus-serialbattery/dbushelper.py
+
+      - name: Copy changelog
+        run: |
+          cp CHANGELOG.md dbus-serialbattery/
+
+      - name: Build release archive
         run: |
           find . -type f -name "*.py" -exec chmod +x {} \;
           find . -type f -name "*.sh" -exec chmod +x {} \;
@@ -37,7 +47,7 @@ jobs:
             --exclude bms/battery_template.py \
             --exclude bms/revov.py \
             --exclude bms/test_max17853.py \
-            etc/dbus-serialbattery/ \
+            dbus-serialbattery/ \
             rc/
 
       - name: Release
