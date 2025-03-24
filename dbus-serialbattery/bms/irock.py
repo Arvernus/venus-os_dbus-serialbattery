@@ -362,7 +362,7 @@ class iRock(Battery):
         for modbusRegisterTable in IROCK_MODBUS_REGISTERS:
             if modbusRegisterTable['version'].major == modbusVersion.major and modbusRegisterTable['version'].minor == modbusVersion.minor:
                 for fieldname, fielddata in modbusRegisterTable['register'].items():
-                    OrgName = IROCK_TO_LOCAL_FIELD_NAMES.fieldname
+                    OrgName = IROCK_TO_LOCAL_FIELD_NAMES['fieldname']
                     if OrgName == name:
                         if fielddata.hardware_support_register is not None:
                             if not self.get_modbus_hw_support(fielddata.hardware_support_register):
@@ -386,7 +386,7 @@ class iRock(Battery):
         for modbusRegisterTable in IROCK_MODBUS_CELL_REGISTERS:
             if modbusRegisterTable['version'].major == modbusVersion.major and modbusRegisterTable['version'].minor == modbusVersion.minor:
                 for fieldname, fielddata in modbusRegisterTable['register'].items():
-                    OrgName = IROCK_TO_LOCAL_FIELD_NAMES.fieldname
+                    OrgName = IROCK_TO_LOCAL_FIELD_NAMES['fieldname']
                     if OrgName == name:
                         if fielddata.hardware_support_register is not None:
                             if not self.get_modbus_hw_support(fielddata.hardware_support_register):
