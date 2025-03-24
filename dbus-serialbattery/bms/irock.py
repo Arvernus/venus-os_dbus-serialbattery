@@ -150,7 +150,7 @@ class iRock(Battery):
                 mbdevs[int.from_bytes(self.address, byteorder="big")] = mbdev
         try:
             found = self.get_field("hardware_name", found)
-            if self.Hardware_Name is not None:
+            if self.hardware_name is not None:
                 self.type = self.hardware_name
                 self.custom_name()
             found = self.get_field("hardware_version", found)
