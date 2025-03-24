@@ -14,7 +14,7 @@ import time
 from datetime import datetime, timedelta
 
 # ModBus Value-Types
-class ValueType(Enum):
+class BaseType(Enum):
     INT8 = "int8"
     UINT8 = "uint8"
     CHAR = "char"
@@ -35,7 +35,7 @@ address_locks: Dict[str, Any] = {}
 
 # logger.setLevel(10)
 
-IROCK_TO_LOCAL_FIELD_NAMES: Dict[str] = {
+IROCK_TO_LOCAL_FIELD_NAMES: Dict[str, str] = {
     "Manufacturer_ID": "manufacturer_id",
     "Modbus_Version": "modbus_version",
     "Hardware_Name": "hardware_name",
@@ -71,89 +71,14 @@ IROCK_TO_LOCAL_FIELD_NAMES: Dict[str] = {
     "Balance_FET": "balance_fet"
 }
 
-
 IROCK_MODBUS_REGISTERS = [
-    {
-        "version": Version("1.0.0"),
-        "register":
-            {
-                "Manufacturer_ID": {"name": "Manufacturer ID", "address": 0, "length": 1, "type": int, "description": "Unique identifier of the manufacturer."},
-                "Modbus_Version": {"name": "Modbus Version", "address": 1, "length": 8, "type": Version, "description": "Modbus protocol version, as a string in semantic versioning format."},
-                "Hardware_Name": {"name": "Hardware Name", "address": 9, "length": 8, "type": str, "description": "Name of the iRock hardware."},
-                "Hardware_Version": {"name": "Hardware Version", "address": 17, "length": 4, "type": Version, "description": "Version identifier of the hardware, as a string in float format."},
-                "Serial_Number": {"name": "Serial Number", "address": 21, "length": 6, "type": str, "description": "Unique serial number of the iRock control board."},
-                "SW_Version": {"name": "Software Version", "address": 27, "length": 8, "type": Version, "description": "Software version currently installed, as a string in semantic versioning format."},
-                "Number_of_Cells": {"name": "Number of Cells", "address": 35, "length": 1, "type": int, "description": "Number of battery cells in the system."},
-                "Capacity": {"name": "Capacity", "address": 36, "length": 2, "type": float, "description": "Total capacity of the battery pack.", "unit": "Ah"},
-                "Battery_Voltage": {"name": "Battery Voltage", "address": 38, "length": 2, "type": float, "description": "Total voltage of the battery pack.", "unit": "V"},
-                "Battery_Current": {"name": "Battery Current", "address": 40, "length": 2, "type": float, "description": "Current flowing in or out of the battery.", "unit": "A"},
-                "Battery_SOC": {"name": "Battery State of Charge", "address": 42, "length": 2, "type": float, "description": "State of Charge (SOC) of the battery.", "unit": "%"},
-                "Remaining_Capacity": {"name": "Remaining Capacity", "address": 44, "length": 2, "type": float, "description": "Remaining available capacity in the battery pack.", "unit": "Ah"},
-                "Max_Charge_Current": {"name": "Max Charge Current", "address": 46, "length": 2, "type": float, "description": "Maximum current the battery can accept.", "unit": "A"},
-                "Max_Discharge_Current": {"name": "Max Discharge Current", "address": 48, "length": 2, "type": float, "description": "Maximum current the battery can deliver.", "unit": "A"},
-                "Max_Cell_Voltage": {"name": "Max Battery Voltage", "address": 50, "length": 2, "type": float, "description": "Maximum voltage recorded for any single cell.", "unit": "V"},
-                "Min_Cell_Voltage": {"name": "Min Battery Voltage", "address": 52, "length": 2, "type": float, "description": "Minimum voltage recorded for any single cell.", "unit": "V"},
-                "Temperature_Sensor_1": {"name": "Temperature Sensor 1", "address": 54, "length": 2, "type": float, "description": "Temperature reading from sensor 1.", "unit": "°C"},
-                "Temperature_Sensor_2": {"name": "Temperature Sensor 2", "address": 56, "length": 2, "type": float, "description": "Temperature reading from sensor 2.", "unit": "°C"},
-                "Temperature_Sensor_3": {"name": "Temperature Sensor 3", "address": 58, "length": 2, "type": float, "description": "Temperature reading from sensor 3.", "unit": "°C"},
-                "Temperature_Sensor_4": {"name": "Temperature Sensor 4", "address": 60, "length": 2, "type": float, "description": "Temperature reading from sensor 4.", "unit": "°C"},
-                "MOSFET_Temperature": {"name": "MOSFET Temperature", "address": 62, "length": 2, "type": float, "description": "MOSFET temperature sensor reading.", "unit": "°C"}
-            }
-    },{
-        "version": Version("2.0.0"),
-        "register":
-            {
-                "Manufacturer_ID": {"name": "Manufacturer ID", "address": 0, "length": 1, "type": int, "description": "Unique identifier of the manufacturer."},
-                "Modbus_Version": {"name": "Modbus Version", "address": 1, "length": 8, "type": Version, "description": "Modbus protocol version, as a string in semantic versioning format."},
-                "Hardware_Name": {"name": "Hardware Name", "address": 9, "length": 8, "type": str, "description": "Name of the iRock hardware."},
-                "Hardware_Version": {"name": "Hardware Version", "address": 17, "length": 4, "type": Version, "description": "Version identifier of the hardware, as a string in float format."},
-                "Serial_Number": {"name": "Serial Number", "address": 21, "length": 6, "type": str, "description": "Unique serial number of the iRock control board."},
-                "SW_Version": {"name": "Software Version", "address": 27, "length": 8, "type": Version, "description": "Software version currently installed, as a string in semantic versioning format."},
-                "Number_of_Cells": {"name": "Number of Cells", "address": 35, "length": 1, "type": int, "description": "Number of battery cells in the system."},
-                "Capacity": {"name": "Capacity", "address": 36, "length": 2, "type": float, "description": "Total capacity of the battery pack.", "unit": "Ah"},
-                "Battery_Voltage": {"name": "Battery Voltage", "address": 38, "length": 2, "type": float, "description": "Total voltage of the battery pack.", "unit": "V"},
-                "Battery_Current": {"name": "Battery Current", "address": 40, "length": 2, "type": float, "description": "Current flowing in or out of the battery.", "unit": "A", "hardware_support_register": 0},
-                "Battery_SOC": {"name": "Battery State of Charge", "address": 42, "length": 2, "type": float, "description": "State of Charge (SOC) of the battery.", "unit": "%", "hardware_support_register": 1},
-                "Remaining_Capacity": {"name": "Remaining Capacity", "address": 44, "length": 2, "type": float, "description": "Remaining available capacity in the battery pack.", "unit": "Ah", "hardware_support_register": 2},
-                "Max_Charge_Current": {"name": "Max Charge Current", "address": 46, "length": 2, "type": float, "description": "Maximum current the battery can accept.", "unit": "A"},
-                "Max_Discharge_Current": {"name": "Max Discharge Current", "address": 48, "length": 2, "type": float, "description": "Maximum current the battery can deliver.", "unit": "A"},
-                "Max_Cell_Voltage": {"name": "Max Battery Voltage", "address": 50, "length": 2, "type": float, "description": "Maximum voltage recorded for any single cell.", "unit": "V"},
-                "Min_Cell_Voltage": {"name": "Min Battery Voltage", "address": 52, "length": 2, "type": float, "description": "Minimum voltage recorded for any single cell.", "unit": "V"},
-                "Temperature_Sensor_1": {"name": "Temperature Sensor 1", "address": 54, "length": 2, "type": float, "description": "Temperature reading from sensor 1.", "unit": "°C", "hardware_support_register": 3},
-                "Temperature_Sensor_2": {"name": "Temperature Sensor 2", "address": 56, "length": 2, "type": float, "description": "Temperature reading from sensor 2.", "unit": "°C", "hardware_support_register": 4},
-                "Temperature_Sensor_3": {"name": "Temperature Sensor 3", "address": 58, "length": 2, "type": float, "description": "Temperature reading from sensor 3.", "unit": "°C", "hardware_support_register": 5},
-                "Temperature_Sensor_4": {"name": "Temperature Sensor 4", "address": 60, "length": 2, "type": float, "description": "Temperature reading from sensor 4.", "unit": "°C", "hardware_support_register": 6},
-                "MOSFET_Temperature": {"name": "MOSFET Temperature", "address": 62, "length": 2, "type": float, "description": "MOSFET temperature sensor reading.", "unit": "°C", "hardware_support_register": 7},
-                "Feedback_Shunt_Current": {"name": "Feedback Shunt Current", "address": 64, "length": 2, "type": float, "description": "Current flowing through the feedback shunt.", "unit": "A", "hardware_support_register": 8},
-                "Charge_FET": {"name": "Charge FET", "address": 66, "length": 1, "type": bool, "description": "Boolean indicating if the charge FET is active."},
-                "Discharge_FET": {"name": "Discharge FET", "address": 67, "length": 1, "type": bool, "description": "Boolean indicating if the discharge FET is active."},
-                "Alarm": {"name": "Alarm", "address": 68, "length": 1, "type": bool, "description": "Array of boolean values indicating which alarms are active."},
-                "Warning": {"name": "Warning", "address": 69, "length": 1, "type": bool, "description": "Array of boolean values indicating which warnings are active."}
-            }
-    }
+    {'version': Version('2.0.0'), 'register': {'Manufacturer ID': {'name': 'Manufacturer ID', 'address': 0, 'array_size': 1, 'type': 'uint16', 'description': 'Unique identifier of the manufacturer.', 'unit': None, 'hardware_support_register': None}, 'Modbus Version': {'name': 'Modbus Version', 'address': 1, 'array_size': 16, 'type': 'char', 'description': 'Modbus protocol version, as a string in semantic versioning format. This field may not change between versions of the protocol.', 'unit': None, 'hardware_support_register': None}, 'Hardware Name': {'name': 'Hardware Name', 'address': 9, 'array_size': 16, 'type': 'char', 'description': 'Name of the iRock hardware. Options include: `iRock 200`, `iRock 300`, `iRock 400`, `iRock 212` or `iRock 424`.', 'unit': None, 'hardware_support_register': None}, 'Hardware Version': {'name': 'Hardware Version', 'address': 17, 'array_size': 8, 'type': 'char', 'description': 'Version identifier of the hardware, as a string in float format.', 'unit': None, 'hardware_support_register': None}, 'Serial Number': {'name': 'Serial Number', 'address': 21, 'array_size': 12, 'type': 'char', 'description': 'Unique serial number of the iRock control board.', 'unit': None, 'hardware_support_register': None}, 'Software Version': {'name': 'Software Version', 'address': 27, 'array_size': 16, 'type': 'char', 'description': 'Software version currently installed, as a string in semantic versioning format.', 'unit': None, 'hardware_support_register': None}, 'Number of Cells': {'name': 'Number of Cells', 'address': 35, 'array_size': 1, 'type': 'uint16', 'description': 'Number of battery cells in the system. May be any number between 2 and 24.', 'unit': None, 'hardware_support_register': None}, 'Battery Voltage': {'name': 'Battery Voltage', 'address': 36, 'array_size': 1, 'type': 'float32', 'description': 'Total voltage of the battery pack.', 'unit': 'V', 'hardware_support_register': None}, 'Battery Current': {'name': 'Battery Current', 'address': 38, 'array_size': 1, 'type': 'float32', 'description': 'Current flowing in or out of the battery. Positive values indicate charging, negative values indicate discharging.', 'unit': 'A', 'hardware_support_register': 0}, 'SOC': {'name': 'SOC', 'address': 40, 'array_size': 1, 'type': 'float32', 'description': 'State of Charge (SOC) of the battery.', 'unit': '%', 'hardware_support_register': 1}, 'Capacity': {'name': 'Capacity', 'address': 42, 'array_size': 1, 'type': 'float32', 'description': 'Total capacity of the battery pack.', 'unit': 'Ah', 'hardware_support_register': None}, 'Remaining Capacity': {'name': 'Remaining Capacity', 'address': 44, 'array_size': 1, 'type': 'float32', 'description': 'Remaining available capacity in the battery pack.', 'unit': 'Ah', 'hardware_support_register': 2}, 'Max Charge Current': {'name': 'Max Charge Current', 'address': 46, 'array_size': 1, 'type': 'float32', 'description': 'Maximum current the battery can accept.', 'unit': 'A', 'hardware_support_register': None}, 'Max Discharge Current': {'name': 'Max Discharge Current', 'address': 48, 'array_size': 1, 'type': 'float32', 'description': 'Maximum current the battery can deliver.', 'unit': 'A', 'hardware_support_register': None}, 'Max Cell Voltage': {'name': 'Max Cell Voltage', 'address': 50, 'array_size': 1, 'type': 'float32', 'description': 'Maximum voltage recorded for any single cell.', 'unit': 'V', 'hardware_support_register': None}, 'Min Cell Voltage': {'name': 'Min Cell Voltage', 'address': 52, 'array_size': 1, 'type': 'float32', 'description': 'Minimum voltage recorded for any single cell.', 'unit': 'V', 'hardware_support_register': None}, 'Temperature Sensor 1': {'name': 'Temperature Sensor 1', 'address': 54, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 1.', 'unit': '°C', 'hardware_support_register': 3}, 'Temperature Sensor 2': {'name': 'Temperature Sensor 2', 'address': 56, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 2.', 'unit': '°C', 'hardware_support_register': 4}, 'Temperature Sensor 3': {'name': 'Temperature Sensor 3', 'address': 58, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 3.', 'unit': '°C', 'hardware_support_register': 5}, 'Temperature Sensor 4': {'name': 'Temperature Sensor 4', 'address': 60, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 4.', 'unit': '°C', 'hardware_support_register': 6}, 'MOSFET Temperature': {'name': 'MOSFET Temperature', 'address': 62, 'array_size': 1, 'type': 'float32', 'description': 'MOSFET temperature sensor reading.', 'unit': '°C', 'hardware_support_register': 7}, 'Feedback Shunt Current': {'name': 'Feedback Shunt Current', 'address': 64, 'array_size': 1, 'type': 'float32', 'description': 'Current flowing through the feedback shunt. The feedback shunt messures the current of all ballancers in sum.', 'unit': 'A', 'hardware_support_register': 8}, 'Charge FET': {'name': 'Charge FET', 'address': 66, 'array_size': 1, 'type': 'bool', 'description': 'Boolean indicating if the charge FET is active. `true` indicates active, `false` indicates inactive.', 'unit': None, 'hardware_support_register': None}, 'Discharge FET': {'name': 'Discharge FET', 'address': 67, 'array_size': 1, 'type': 'bool', 'description': 'Boolean indicating if the discharge FET is active. `true` indicates active, `false` indicates inactive.', 'unit': None, 'hardware_support_register': None}, 'Low Voltage Alarm': {'name': 'Low Voltage Alarm', 'address': 68, 'array_size': 1, 'type': 'uint8', 'description': 'Alarm Status for low battery voltage. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': None}, 'High Voltage Alarm': {'name': 'High Voltage Alarm', 'address': 69, 'array_size': 1, 'type': 'uint8', 'description': 'Alarm Status for high battery voltage. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': None}, 'Low Cell Voltage Alarm': {'name': 'Low Cell Voltage Alarm', 'address': 70, 'array_size': 1, 'type': 'uint8', 'description': 'Alarm Status for low cell voltage. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': None}, 'High Cell Voltage Alarm': {'name': 'High Cell Voltage Alarm', 'address': 71, 'array_size': 1, 'type': 'uint8', 'description': 'Alarm Status for high cell voltage. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': None}, 'Low SOC Alarm': {'name': 'Low SOC Alarm', 'address': 72, 'array_size': 1, 'type': 'uint8', 'description': 'Alarm Status for low SOC. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': None}, 'High Charge Current Alarm': {'name': 'High Charge Current Alarm', 'address': 73, 'array_size': 1, 'type': 'uint8', 'description': 'Alarm Status for high charge current. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': None}, 'High Discharge Current Alarm': {'name': 'High Discharge Current Alarm', 'address': 74, 'array_size': 1, 'type': 'uint8', 'description': 'Alarm Status for high discharge current. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': None}, 'Temperature Alarm': {'name': 'Temperature Alarm', 'address': 75, 'array_size': 1, 'type': 'uint8', 'description': 'Alarm Status for high temperature. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': None}}},
+    {'version': Version('1.0.0'), 'register': {'Manufacturer ID': {'name': 'Manufacturer ID', 'address': 0, 'array_size': 1, 'type': 'uint16', 'description': 'Unique identifier of the manufacturer.', 'unit': None, 'hardware_support_register': None}, 'Modbus Version': {'name': 'Modbus Version', 'address': 1, 'array_size': 16, 'type': 'char', 'description': 'Modbus protocol version, as a string in semantic versioning format. This field may not change between versions of the protocol.', 'unit': None, 'hardware_support_register': None}, 'Hardware Name': {'name': 'Hardware Name', 'address': 9, 'array_size': 16, 'type': 'char', 'description': 'Name of the iRock hardware. Options include: `iRock 200`, `iRock 300`, `iRock 400`, `iRock 212` or `iRock 424`.', 'unit': None, 'hardware_support_register': None}, 'Hardware Version': {'name': 'Hardware Version', 'address': 17, 'array_size': 8, 'type': 'char', 'description': 'Version identifier of the hardware, as a string in float format.', 'unit': None, 'hardware_support_register': None}, 'Serial Number': {'name': 'Serial Number', 'address': 21, 'array_size': 12, 'type': 'char', 'description': 'Unique serial number of the iRock control board.', 'unit': None, 'hardware_support_register': None}, 'Software Version': {'name': 'Software Version', 'address': 27, 'array_size': 16, 'type': 'char', 'description': 'Software version currently installed, as a string in semantic versioning format.', 'unit': None, 'hardware_support_register': None}, 'Number of Cells': {'name': 'Number of Cells', 'address': 35, 'array_size': 1, 'type': 'uint16', 'description': 'Number of battery cells in the system. May be any number between 2 and 24.', 'unit': None, 'hardware_support_register': None}, 'Battery Voltage': {'name': 'Battery Voltage', 'address': 36, 'array_size': 1, 'type': 'float32', 'description': 'Total voltage of the battery pack.', 'unit': 'V', 'hardware_support_register': None}, 'Battery Current': {'name': 'Battery Current', 'address': 38, 'array_size': 1, 'type': 'float32', 'description': 'Current flowing in or out of the battery. Positive values indicate charging, negative values indicate discharging.', 'unit': 'A', 'hardware_support_register': None}, 'SOC': {'name': 'SOC', 'address': 40, 'array_size': 1, 'type': 'float32', 'description': 'State of Charge (SOC) of the battery.', 'unit': '%', 'hardware_support_register': None}, 'Capacity': {'name': 'Capacity', 'address': 42, 'array_size': 1, 'type': 'float32', 'description': 'Total capacity of the battery pack.', 'unit': 'Ah', 'hardware_support_register': None}, 'Remaining Capacity': {'name': 'Remaining Capacity', 'address': 44, 'array_size': 1, 'type': 'float32', 'description': 'Remaining available capacity in the battery pack.', 'unit': 'Ah', 'hardware_support_register': None}, 'Max Charge Current': {'name': 'Max Charge Current', 'address': 46, 'array_size': 1, 'type': 'float32', 'description': 'Maximum current the battery can accept.', 'unit': 'A', 'hardware_support_register': None}, 'Max Discharge Current': {'name': 'Max Discharge Current', 'address': 48, 'array_size': 1, 'type': 'float32', 'description': 'Maximum current the battery can deliver.', 'unit': 'A', 'hardware_support_register': None}, 'Max Cell Voltage': {'name': 'Max Cell Voltage', 'address': 50, 'array_size': 1, 'type': 'float32', 'description': 'Maximum voltage recorded for any single cell.', 'unit': 'V', 'hardware_support_register': None}, 'Min Cell Voltage': {'name': 'Min Cell Voltage', 'address': 52, 'array_size': 1, 'type': 'float32', 'description': 'Minimum voltage recorded for any single cell.', 'unit': 'V', 'hardware_support_register': None}, 'Temperature Sensor 1': {'name': 'Temperature Sensor 1', 'address': 54, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 1.', 'unit': '°C', 'hardware_support_register': None}, 'Temperature Sensor 2': {'name': 'Temperature Sensor 2', 'address': 56, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 2.', 'unit': '°C', 'hardware_support_register': None}, 'Temperature Sensor 3': {'name': 'Temperature Sensor 3', 'address': 58, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 3.', 'unit': '°C', 'hardware_support_register': None}, 'Temperature Sensor 4': {'name': 'Temperature Sensor 4', 'address': 60, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 4.', 'unit': '°C', 'hardware_support_register': None}, 'MOSFET Temperature': {'name': 'MOSFET Temperature', 'address': 62, 'array_size': 1, 'type': 'float32', 'description': 'MOSFET temperature sensor reading.', 'unit': '°C', 'hardware_support_register': None}}},
 ]
 
 IROCK_MODBUS_CELL_REGISTERS = [
-    {
-        "version": Version("1.0.0"),
-        "offset": 64,
-        "length": 4,
-        "register":
-            {
-                "Cell_Voltage": {"name": "Cell Voltage", "offset": 0, "length": 2, "type": float, "description": "Voltage of cell.", "unit": "V"},
-                "Cell_Balance_Status": {"name": "Cell Balance Status", "offset": 2, "length": 1, "type": bool, "description": "Boolean indicating if the cells balancer is active."}
-            }
-    },
-    {
-        "version": Version("2.0.0"),
-        "offset": 70,
-        "length": 3,
-        "register":
-            {
-                "Cell_Voltage": {"name": "Cell Voltage", "offset": 0, "length": 2, "type": float, "description": "Voltage of cell.", "unit": "V"},
-                "Cell_Balance_Status": {"name": "Cell Balance Status", "offset": 2, "length": 1, "type": bool, "description": "Boolean indicating if the cells balancer is active."}
-            }
-    }
+    {'version': Version('2.0.0'), 'offset': 76, 'length': 3, 'register': {'Cell Voltage': {'name': 'Cell Voltage', 'offset': 0, 'array_size': 1, 'type': 'float32', 'description': 'Voltage of cell.', 'unit': 'V', 'hardware_support_register': None}, 'Cell Balance Status': {'name': 'Cell Balance Status', 'offset': 2, 'array_size': 1, 'type': 'bool', 'description': 'Boolean indicating if the cells balancer is active. `true` indicates active, `false` indicates inactive.', 'unit': None, 'hardware_support_register': None}}},
+    {'version': Version('1.0.0'), 'offset': 64, 'length': 4, 'register': {'Cell Voltage': {'name': 'Cell Voltage', 'offset': 0, 'array_size': 1, 'type': 'float32', 'description': 'Voltage of cell.', 'unit': 'V', 'hardware_support_register': None}, 'Cell Balance Status': {'name': 'Cell Balance Status', 'offset': 2, 'array_size': 1, 'type': 'bool', 'description': 'Boolean indicating if the cells balancer is active. `true` indicates active, `false` indicates inactive.', 'unit': None, 'hardware_support_register': None}, 'Reserved': {'name': 'Reserved', 'offset': 3, 'array_size': 1, 'type': 'uint16', 'description': 'Reserved', 'unit': None, 'hardware_support_register': None}}},
 ]
 
 def timed_lru_cache(days: float = 0, seconds: float = 0, microseconds: float = 0, milliseconds: float = 0, minutes: float = 0, hours: float = 0, weeks: float = 0, maxsize: int = 128):
@@ -391,32 +316,33 @@ class iRock(Battery):
                     logger.warning(f"Can't read iRock HW Support Coil: {e}")
         return False
 
-    def get_modbus_value(self, address: int, type: ValueType, size: int = 1):
+    def get_modbus_value(self, address: int, type: str, size: int = 1):
         # TODO: Arrays are only supported for CHAR
         mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
+        type = BaseType(type)
         with port_locks[self.port]:
             with address_locks[self.address]:
                 try:
                     result = None
-                    if type == ValueType.CHAR:
+                    if type == BaseType.CHAR:
                         result = mbdev.read_string(address, size/2)
-                    elif type == ValueType.INT16:
+                    elif type == BaseType.INT16:
                         result = mbdev.read_register(address, signed=True)
-                    elif type == ValueType.UINT16:
+                    elif type == BaseType.UINT16:
                         result = mbdev.read_register(address)
-                    elif type == ValueType.INT32:
+                    elif type == BaseType.INT32:
                         result = mbdev.read_long(address, signed=True)
-                    elif type == ValueType.UINT32:
+                    elif type == BaseType.UINT32:
                         result = mbdev.read_long(address)
-                    elif type == ValueType.INT64:
+                    elif type == BaseType.INT64:
                         result = mbdev.read_long(address, signed=True, number_of_registers=4)
-                    elif type == ValueType.UINT64:
+                    elif type == BaseType.UINT64:
                         result = mbdev.read_long(address, number_of_registers=4)
-                    elif type == ValueType.FLOAT32:
+                    elif type == BaseType.FLOAT32:
                         result = mbdev.read_float(address, number_of_registers=2, byteorder=minimalmodbus.BYTEORDER_LITTLE_SWAP)
-                    elif type == ValueType.FLOAT64:
+                    elif type == BaseType.FLOAT64:
                         result = mbdev.read_float(address, number_of_registers=4, byteorder=minimalmodbus.BYTEORDER_LITTLE_SWAP)
-                    elif type == ValueType.BOOL:
+                    elif type == BaseType.BOOL:
                         result = mbdev.read_register(address) != 0
                     if result is None:
                         logger.warning(f"iRock field type {type} not supported")

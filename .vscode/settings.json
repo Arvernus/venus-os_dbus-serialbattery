@@ -1,6 +1,7 @@
 {
-    "[python]": { "editor.formatOnSave": true },
-
+    "[python]": {
+        "editor.formatOnSave": true
+    },
     "python.autoComplete.extraPaths": [
         "dbus-serialbattery/ext",
         "dbus-serialbattery/ext/velib_python",
@@ -37,5 +38,6 @@
         "vebus",
         "vedbus",
         "Victron"
-    ]
+    ],
+    "editor.formatOnSave": true
 }

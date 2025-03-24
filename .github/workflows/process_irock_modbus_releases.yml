@@ -1,0 +1,32 @@
+name: Process iRock Modbus Releases
+
+on:
+  workflow_dispatch:
+
+jobs:
+  process_releases:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests jsonschema pyyaml semantic_version
+
+    - name: Fetch iRock Modbus releases
+      run: |
+        python /Users/joschawagner/GitHub/venus-os_dbus-serialbattery/scripts/process_releases.py
+
+    - name: Commit changes
+      uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: "Update IROCK_MODBUS_REGISTERS and IROCK_MODBUS_CELL_REGISTERS"
+        file_pattern: ./dbus-serialbattery/bms/irock.py
