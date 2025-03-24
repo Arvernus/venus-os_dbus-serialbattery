@@ -368,7 +368,7 @@ class iRock(Battery):
                             if not self.get_modbus_hw_support(fielddata['hardware_support_register']):
                                 logger.warning(f"iRock Hardware Type \"{self.type}\" does not supported field {name}")
                                 return False
-                        value = self.get_modbus_value(fielddata.address,fielddata.type,fielddata.array_size)
+                        value = self.get_modbus_value(fielddata['address'],fielddata.type,fielddata.array_size)
                         NP = OrgName.split(".")
                         if len(NP) == 2:
                             setattr(self, NP[1], value)
