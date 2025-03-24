@@ -213,6 +213,10 @@ CURRENT_MEASURED_BY_USER: list = get_list_from_config("DEFAULT", "CURRENT_MEASUR
 CURRENT_CORRECTION: bool = CURRENT_REPORTED_BY_BMS != CURRENT_MEASURED_BY_USER
 
 
+# --------- Bluetooth BMS ---------
+BLUETOOTH_USE_POLLING = get_bool_from_config("DEFAULT", "BLUETOOTH_USE_POLLING")
+BLUETOOTH_FORCE_RESET_BLE_STACK = get_bool_from_config("DEFAULT", "BLUETOOTH_FORCE_RESET_BLE_STACK")
+
 # --------- Daisy Chain Configuration (Multiple BMS on one cable) ---------
 BATTERY_ADDRESSES: list = get_list_from_config("DEFAULT", "BATTERY_ADDRESSES", str)
 

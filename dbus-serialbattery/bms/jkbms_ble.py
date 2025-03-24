@@ -7,7 +7,8 @@
 
 from battery import Battery, Cell
 from typing import Callable
-from utils import logger, AUTO_RESET_SOC
+from utils import logger, AUTO_RESET_SOC, BLUETOOTH_USE_POLLING
+from utils_ble import restart_ble_hardware_and_bluez_driver
 from time import sleep, time
 from bms.jkbms_brn import Jkbms_Brn
 import os
@@ -134,6 +135,9 @@ class Jkbms_Ble(Battery):
         return self.unique_identifier_tmp
 
     def use_callback(self, callback: Callable) -> bool:
+        if BLUETOOTH_USE_POLLING:
+            return False
+
         self.jk.set_callback(callback)
         return callback is not None
 
@@ -230,23 +234,7 @@ class Jkbms_Ble(Battery):
         return True
 
     def reset_bluetooth(self):
-        logger.info("Reset of system Bluetooth daemon triggered")
-        self.resetting = True
-        if self.jk.is_running():
-            if self.jk.stop_scraping():
-                logger.info("Scraping stopped, issuing sys-commands")
-            else:
-                logger.warning("Scraping was unable to stop, issuing sys-commands")
-
-        # process kill is needed, since the service/bluetooth driver is probably freezed
-        os.system('pkill -f "bluetoothd"')
-        # stop will not work, if service/bluetooth driver is stuck
-        # os.system("/etc/init.d/bluetooth stop")
-        sleep(2)
-        os.system("rfkill block bluetooth")
-        os.system("rfkill unblock bluetooth")
-        os.system("/etc/init.d/bluetooth start")
-        logger.info("System Bluetooth daemon should have been restarted")
+        restart_ble_hardware_and_bluez_driver()
 
     def get_balancing(self):
         return 1 if self.balancing else 0

@@ -481,6 +481,8 @@ def main():
             battery[first_key].poll_interval,
             lambda: poll_battery(mainloop),
         )
+    else:
+        logger.info("Polling interval: active callback used")
 
     # print log at this point, else not all data is correctly populated
     for key_address in battery:

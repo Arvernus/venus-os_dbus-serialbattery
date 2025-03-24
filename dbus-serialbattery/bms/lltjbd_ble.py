@@ -13,7 +13,8 @@ import re
 from asyncio import CancelledError
 from time import sleep
 from typing import Union, Optional
-from utils import logger
+from utils import logger, BLUETOOTH_FORCE_RESET_BLE_STACK
+from utils_ble import restart_ble_hardware_and_bluez_driver
 from bleak import BleakClient, BleakScanner, BLEDevice
 from bleak.exc import BleakDBusError
 from bms.lltjbd import LltJbdProtection, LltJbd
@@ -260,20 +261,12 @@ class LltJbd_Ble(LltJbd):
             return False
 
     def reset_bluetooth(self):
-        logger.error("Reset of system Bluetooth daemon triggered")
+        if not BLUETOOTH_FORCE_RESET_BLE_STACK:
+            return
+
         self.bt_loop = False
 
-        # process kill is needed, since the service/bluetooth driver is probably freezed
-        # os.system('pkill -f "bluetoothd"')
-        # stop will not work, if service/bluetooth driver is stuck
-        os.system("/etc/init.d/bluetooth stop")
-        sleep(2)
-        os.system("rfkill block bluetooth")
-        os.system("rfkill unblock bluetooth")
-        os.system("/etc/init.d/bluetooth start")
-        logger.error("System Bluetooth daemon should have been restarted")
-        sleep(5)
-        sys.exit(1)
+        restart_ble_hardware_and_bluez_driver()
 
     def reset_hci_uart(self):
         logger.error("Reset of hci_uart stack... Reconnecting to: " + self.address)
