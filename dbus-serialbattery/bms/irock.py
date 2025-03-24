@@ -3,7 +3,7 @@
 from battery import Battery, Cell
 from utils import logger
 import utils
-import minimalmodbus
+import ext.minimalmodbus as minimalmodbus
 import serial
 import threading
 from typing import Dict, List, Any
