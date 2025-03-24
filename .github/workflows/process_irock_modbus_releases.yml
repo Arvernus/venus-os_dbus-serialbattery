@@ -16,6 +16,14 @@ jobs:
       with:
         python-version: '3.x'
 
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -23,7 +31,7 @@ jobs:
 
     - name: Fetch iRock Modbus releases
       run: |
-        python /Users/joschawagner/GitHub/venus-os_dbus-serialbattery/scripts/process_releases.py
+        python ./scripts/process_releases.py
 
     - name: Commit changes
       uses: stefanzweifel/git-auto-commit-action@v4
