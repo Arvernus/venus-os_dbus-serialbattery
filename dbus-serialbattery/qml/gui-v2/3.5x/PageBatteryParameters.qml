@@ -14,46 +14,45 @@ Page {
 	GradientListView {
 		model: ObjectModel {
 
-			ListText {
+			ListTextItem {
 				text: "Charge Mode"
 				dataItem.uid: root.bindPrefix + "/Info/ChargeMode"
-				preferredVisible: dataItem.isValid
+				allowed: defaultAllowed && dataItem.isValid
 			}
-
-			ListQuantity {
+			ListQuantityItem {
 				//% "Charge Voltage Limit (CVL)"
 				text: qsTrId("batteryparameters_charge_voltage_limit_cvl")
 				dataItem.uid: root.bindPrefix + "/Info/MaxChargeVoltage"
 				unit: VenusOS.Units_Volt_DC
 			}
 
-			ListText {
+			ListTextItem {
 				text: "Charge Limitation"
 				dataItem.uid: root.bindPrefix + "/Info/ChargeLimitation"
-				preferredVisible: dataItem.isValid
+				allowed: defaultAllowed && dataItem.isValid
 			}
 
-			ListQuantity {
+			ListQuantityItem {
 				//% "Charge Current Limit (CCL)"
 				text: qsTrId("batteryparameters_charge_current_limit_ccl")
 				dataItem.uid: root.bindPrefix + "/Info/MaxChargeCurrent"
 				unit: VenusOS.Units_Amp
 			}
 
-			ListText {
+			ListTextItem {
 				text: "Discharge Limitation"
 				dataItem.uid: root.bindPrefix + "/Info/DischargeLimitation"
-				preferredVisible: dataItem.isValid
+				allowed: defaultAllowed && dataItem.isValid
 			}
 
-			ListQuantity {
+			ListQuantityItem {
 				//% "Discharge Current Limit (DCL)"
 				text: qsTrId("batteryparameters_discharge_current_limit_dcl")
 				dataItem.uid: root.bindPrefix + "/Info/MaxDischargeCurrent"
 				unit: VenusOS.Units_Amp
 			}
 
-			ListQuantity {
+			ListQuantityItem {
 				//% "Low Voltage Disconnect (always ignored)"
 				text: qsTrId("batteryparameters_low_voltage_disconnect_always_ignored")
 				dataItem.uid: root.bindPrefix + "/Info/BatteryLowVoltage"
@@ -70,7 +69,7 @@ Page {
 				}
 
 				bottomContentChildren: [
-					PrimaryListLabel {
+					ListLabel {
 						topPadding: 0
 						bottomPadding: 0
 						color: Theme.color_font_secondary
@@ -79,7 +78,7 @@ Page {
 					}
 				]
 
-				preferredVisible: chargeModeDebug.value !== undefined && chargeModeDebug.value !== ""
+				allowed: defaultAllowed && chargeModeDebug.value !== undefined && chargeModeDebug.value !== ""
 			}
 
 			ListItem {
@@ -91,7 +90,7 @@ Page {
 				}
 
 				bottomContentChildren: [
-					PrimaryListLabel {
+					ListLabel {
 						topPadding: 0
 						bottomPadding: 0
 						color: Theme.color_font_secondary
@@ -100,7 +99,7 @@ Page {
 					}
 				]
 
-				preferredVisible: chargeModeDebugFloat.value !== undefined && chargeModeDebugFloat.value !== ""
+				allowed: defaultAllowed && chargeModeDebugFloat.value !== undefined && chargeModeDebugFloat.value !== ""
 			}
 
 			ListItem {
@@ -112,7 +111,7 @@ Page {
 				}
 
 				bottomContentChildren: [
-					PrimaryListLabel {
+					ListLabel {
 						topPadding: 0
 						bottomPadding: 0
 						color: Theme.color_font_secondary
@@ -121,7 +120,7 @@ Page {
 					}
 				]
 
-				preferredVisible: chargeModeDebugBulk.value !== undefined && chargeModeDebugBulk.value !== ""
+				allowed: defaultAllowed && chargeModeDebugBulk.value !== undefined && chargeModeDebugBulk.value !== ""
 			}
 
 		}

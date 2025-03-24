@@ -311,7 +311,7 @@ Page {
 
 			ListItem {
 				text: "Cells 5-8"
-				preferredVisible: batteryVoltagesCell_5 != "--"
+				allowed: defaultAllowed && batteryVoltagesCell_5 != "--"
 				content.children: [
 					Column {
 						width: 110
@@ -378,7 +378,7 @@ Page {
 
 			ListItem {
 				text: "Cells 9-12"
-				preferredVisible: batteryVoltagesCell_9 != "--"
+				allowed: defaultAllowed && batteryVoltagesCell_9 != "--"
 				content.children: [
 					Column {
 						width: 110
@@ -445,7 +445,7 @@ Page {
 
 			ListItem {
 				text: "Cells 13-16"
-				preferredVisible: batteryVoltagesCell_13 != "--"
+				allowed: defaultAllowed && batteryVoltagesCell_13 != "--"
 				content.children: [
 					Column {
 						width: 110
@@ -512,7 +512,7 @@ Page {
 
 			ListItem {
 				text: "Cells 17-20"
-				preferredVisible: batteryVoltagesCell_17 != "--"
+				allowed: defaultAllowed && batteryVoltagesCell_17 != "--"
 				content.children: [
 					Column {
 						width: 110
@@ -579,7 +579,7 @@ Page {
 
 			ListItem {
 				text: "Cells 21-24"
-				preferredVisible: batteryVoltagesCell_21 != "--"
+				allowed: defaultAllowed && batteryVoltagesCell_21 != "--"
 				content.children: [
 					Column {
 						width: 110
@@ -646,7 +646,7 @@ Page {
 
 			ListItem {
 				text: "Cells 25-28"
-				preferredVisible: batteryVoltagesCell_25 != "--"
+				allowed: defaultAllowed && batteryVoltagesCell_25 != "--"
 				content.children: [
 					Column {
 						width: 110
@@ -713,7 +713,7 @@ Page {
 
 			ListItem {
 				text: "Cells 29-32"
-				preferredVisible: batteryVoltagesCell_29 != "--"
+				allowed: defaultAllowed && batteryVoltagesCell_29 != "--"
 				content.children: [
 					Column {
 						width: 110
