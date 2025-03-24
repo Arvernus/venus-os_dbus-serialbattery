@@ -370,8 +370,10 @@ class iRock(Battery):
                                 return False
                         value = self.get_modbus_value(fielddata['address'],fielddata['type'],fielddata['array_size'])
                         NP = OrgName.split(".")
+                        if len(NP) == 1:
+                            setattr(self, OrgName, value)
                         if len(NP) == 2:
-                            setattr(self, NP[1], value)
+                            setattr(self[NP[0]], NP[1], value)
                         else:
                             logger.warning(f"Invalid field name format: {OrgName}")
                         return andOperator
@@ -395,11 +397,13 @@ class iRock(Battery):
                             if not self.get_modbus_hw_support(fielddata['hardware_support_register']):
                                 logger.warning(f"iRock Hardware Type \"{self.type}\" does not supported field {name}")
                                 return False
-                        adr = modbusRegisterTable.offset + (modbusRegisterTable.length * (cell - 1)) + fielddata.offset
+                        adr = modbusRegisterTable['offset'] + (modbusRegisterTable['length'] * (cell)) + fielddata['offset']
                         value = self.get_modbus_value(adr,fielddata['type'],fielddata['array_size'])
                         NP = OrgName.split(".")
+                        if len(NP) == 1:
+                            setattr(self.cells[cell], OrgName, value)
                         if len(NP) == 2:
-                            setattr(self.cell[cell], NP[1], value)
+                            setattr(self.cells[cell][NP[0]], NP[1], value)
                         else:
                             logger.warning(f"Invalid field name format: {OrgName}")
                         return andOperator
