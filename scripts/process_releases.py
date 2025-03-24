@@ -101,13 +101,13 @@ def main():
         data.append(registers_dict)
         cell_data.append(cell_registers_dict)
     
-    with open("/Users/joschawagner/GitHub/venus-os_dbus-serialbattery/dbus-serialbattery/bms/irock.py", 'r') as file:
+    with open("./dbus-serialbattery/bms/irock.py", 'r') as file:
         content = file.read()
     
     content = replace_constant(content, "IROCK_MODBUS_REGISTERS", data)
     content = replace_constant(content, "IROCK_MODBUS_CELL_REGISTERS", cell_data)
     
-    with open("/Users/joschawagner/GitHub/venus-os_dbus-serialbattery/dbus-serialbattery/bms/irock.py", 'w') as file:
+    with open("./dbus-serialbattery/bms/irock.py", 'w') as file:
         file.write(content)
     
     logger.info("Finished processing all releases")
