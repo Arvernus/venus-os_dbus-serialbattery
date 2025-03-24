@@ -364,8 +364,8 @@ class iRock(Battery):
                 for fieldname, fielddata in modbusRegisterTable['register'].items():
                     OrgName = IROCK_TO_LOCAL_FIELD_NAMES[fieldname]
                     if OrgName == name:
-                        if fielddata.hardware_support_register is not None:
-                            if not self.get_modbus_hw_support(fielddata.hardware_support_register):
+                        if fielddata['hardware_support_register'] is not None:
+                            if not self.get_modbus_hw_support(fielddata['hardware_support_register']):
                                 logger.warning(f"iRock Hardware Type \"{self.type}\" does not supported field {name}")
                                 return False
                         value = self.get_modbus_value(fielddata.address,fielddata.type,fielddata.array_size)
@@ -391,8 +391,8 @@ class iRock(Battery):
                 for fieldname, fielddata in modbusRegisterTable['register'].items():
                     OrgName = IROCK_TO_LOCAL_FIELD_NAMES[fieldname]
                     if OrgName == name:
-                        if fielddata.hardware_support_register is not None:
-                            if not self.get_modbus_hw_support(fielddata.hardware_support_register):
+                        if fielddata['hardware_support_register'] is not None:
+                            if not self.get_modbus_hw_support(fielddata['hardware_support_register']):
                                 logger.warning(f"iRock Hardware Type \"{self.type}\" does not supported field {name}")
                                 return False
                         adr = modbusRegisterTable.offset + (modbusRegisterTable.length * (cell - 1)) + fielddata.offset
