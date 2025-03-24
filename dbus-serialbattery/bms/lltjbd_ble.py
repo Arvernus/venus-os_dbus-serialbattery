@@ -71,6 +71,7 @@ class LltJbd_Ble(LltJbd):
         logger.info("BLE client disconnected")
 
     async def bt_main_loop(self):
+        logger.info("|- Try to connect to LltJbd_Ble at " + self.address)
         try:
             self.device = await BleakScanner.find_device_by_address(self.address, cb=dict(use_bdaddr=True))
 
@@ -95,6 +96,7 @@ class LltJbd_Ble(LltJbd):
         try:
             async with BleakClient(self.device, disconnected_callback=self.on_disconnect) as client:
                 self.bt_client = client
+                logger.info("|- Device connected, check if it's really a LLT/JBD BMS")
                 self.bt_loop = asyncio.get_event_loop()
                 self.response_queue = asyncio.Queue()
                 self.ready_event.set()
@@ -158,7 +160,6 @@ class LltJbd_Ble(LltJbd):
         # The result or call should be unique to this BMS. Battery name or version, etc.
         # Return True if success, False for failure
         result = False
-        logger.info("Test of LltJbd_Ble at " + self.address)
         try:
             if self.address:
                 result = True
@@ -166,8 +167,6 @@ class LltJbd_Ble(LltJbd):
                 result = True
             if result:
                 result = super().test_connection()
-            if not result:
-                logger.error("No BMS found at " + self.address)
         except Exception:
             exception_type, exception_object, exception_traceback = sys.exc_info()
             file = exception_traceback.tb_frame.f_code.co_filename
