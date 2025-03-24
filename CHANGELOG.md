@@ -82,6 +82,7 @@
 * Changed: Improved driver and `config.default.ini` descriptions by @mr-manuel
 * Changed: JKBMS CAN - Per default only address 0 is recognized. Change `BATTERY_ADDRESS` to match your device address by @Hooorny and @mr-manuel
 * Changed: Licensing from MIT license to GNU AGPLv3 license by @mr-manuel
+* Changed: LLT/JBD BLE - Fixed initial connection by @mr-manuel
 * Changed: Refactored driver installation via USB/SD card by @mr-manuel
 * Changed: Renamed `install-qml.sh` to `custom-gui-install.sh` by @mr-manuel
 * Changed: Renamed `reinstall-local.sh` to `enable.sh` by @mr-manuel
