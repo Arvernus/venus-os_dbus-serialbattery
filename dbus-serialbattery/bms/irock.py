@@ -370,12 +370,7 @@ class iRock(Battery):
                                 return False
                         value = self.get_modbus_value(fielddata['address'],fielddata['type'],fielddata['array_size'])
                         NP = OrgName.split(".")
-                        if len(NP) == 1:
-                            setattr(self, OrgName, value)
-                        if len(NP) == 2:
-                            setattr(self[NP[0]], NP[1], value)
-                        else:
-                            logger.warning(f"Invalid field name format: {OrgName}")
+                        setattr(self[NP[0]], NP[1], value)
                         return andOperator
         logger.warning(f"iRock field {name} not found")
         return False
@@ -400,12 +395,7 @@ class iRock(Battery):
                         adr = modbusRegisterTable['offset'] + (modbusRegisterTable['length'] * (cell)) + fielddata['offset']
                         value = self.get_modbus_value(adr,fielddata['type'],fielddata['array_size'])
                         NP = OrgName.split(".")
-                        if len(NP) == 1:
-                            setattr(self.cells[cell], OrgName, value)
-                        if len(NP) == 2:
-                            setattr(self.cells[cell][NP[0]], NP[1], value)
-                        else:
-                            logger.warning(f"Invalid field name format: {OrgName}")
+                        setattr(self.cells[cell][NP[0]], NP[1], value)
                         return andOperator
         logger.warning(f"iRock field {name} not found")
         return False
