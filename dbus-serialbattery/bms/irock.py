@@ -13,6 +13,21 @@ import functools
 import time
 from datetime import datetime, timedelta
 
+# ModBus Value-Types
+class ValueType(Enum):
+    INT8 = "int8"
+    UINT8 = "uint8"
+    CHAR = "char"
+    INT16 = "int16"
+    UINT16 = "uint16"
+    INT32 = "int32"
+    UINT32 = "uint32"
+    INT64 = "int64"
+    UINT64 = "uint64"
+    FLOAT32 = "float32"
+    FLOAT64 = "float64"
+    BOOL = "bool"
+
 # Define global variables
 mbdevs: Dict[int, minimalmodbus.Instrument] = {}
 port_locks: Dict[str, Any] = {}
@@ -20,40 +35,104 @@ address_locks: Dict[str, Any] = {}
 
 # logger.setLevel(10)
 
-class iRockFunctionType(Enum):
-    SETTING = 1
-    STATUS = 2
-    CELL = 3
-    
+IROCK_TO_LOCAL_FIELD_NAMES: Dict[str] = {
+    "Manufacturer_ID": "manufacturer_id",
+    "Modbus_Version": "modbus_version",
+    "Hardware_Name": "hardware_name",
+    "Hardware_Version": "hardware_version",
+    "Serial_Number": "serial_number",
+    "SW_Version": "sw_version",
+    "Number_of_Cells": "cell_count",
+    "Capacity": "capacity",
+    "Battery_Voltage": "voltage",
+    "Battery_Current": "current",
+    "Battery_SOC": "soc",
+    "Remaining_Capacity": "remaining_capacity",
+    "Max_Charge_Current": "max_battery_charge_current",
+    "Max_Discharge_Current": "max_battery_discharge_current",
+    "Max_Cell_Voltage": "max_battery_voltage_bms",
+    "Min_Cell_Voltage": "min_battery_voltage_bms",
+    "Temperature_Sensor_1": "temp1",
+    "Temperature_Sensor_2": "temp2",
+    "Temperature_Sensor_3": "temp3",
+    "Temperature_Sensor_4": "temp4",
+    "MOSFET_Temperature": "temp_mos",
+    "Feedback_Shunt_Current": "feedback_shunt_current",
+    "Charge_FET": "charge_fet",
+    "Discharge_FET": "discharge_fet",
+    "Alarm": "alarm",
+    "Warning": "warning",
+    "Cell_Voltage": "voltage",
+    "Cell_Balance_Status": "balance",
+    # Not yet found in the iRock Modbus register documentation (wild guess)
+    "Production": "production",
+    "Custom_Field": "custom_field",
+    "SOH": "soh",
+    "Balance_FET": "balance_fet"
+}
+
+
 IROCK_MODBUS_REGISTERS = [
     {
         "version": Version("1.0.0"),
         "register":
             {
-                "manufacturer_id": {"name": "Manufacturer ID", "address": 0, "length": 1, "function": iRockFunctionType.SETTING, "type": int},
-                "modbus_version": {"name": "Modbus Version", "address": 1, "length": 8, "function": iRockFunctionType.SETTING, "type": Version},
-                "hardware_name": {"name": "Hardware Name", "address": 9, "length": 8, "function": iRockFunctionType.SETTING, "type": str},
-                "hardware_version": {"name": "Hardware Version", "address": 17, "length": 4, "function": iRockFunctionType.SETTING, "type": Version},
-                "serial_number": {"name": "Serial Number", "address": 21, "length": 6, "function": iRockFunctionType.SETTING, "type": str},
-                "sw_version": {"name": "Software Version", "address": 27, "length": 8, "function": iRockFunctionType.SETTING, "type": Version},
-                "cell_count": {"name": "Number of Cells", "address": 35, "length": 1, "function": iRockFunctionType.SETTING, "type": int},
-                "capacity": {"name": "Capacity", "address": 36, "length": 2, "function": iRockFunctionType.SETTING, "type": float},
-                "voltage": {"name": "Battery Voltage", "address": 38, "length": 2, "function": iRockFunctionType.STATUS, "type": float},
-                "current": {"name": "Battery Current", "address": 40, "length": 2, "function": iRockFunctionType.STATUS, "type": float},
-                "soc": {"name": "Battery State of Charge", "address": 42, "length": 2, "function": iRockFunctionType.STATUS, "type": float},
-                "remaining_capacity": {"name": "Remaining Capacity", "address": 44, "length": 2, "function": iRockFunctionType.STATUS, "type": float},
-                "max_battery_charge_current": {"name": "Max Charge Current", "address": 46, "length": 2, "function": iRockFunctionType.SETTING, "type": float},
-                "max_battery_discharge_current": {"name": "Max Discharge Current", "address": 48, "length": 2, "function": iRockFunctionType.SETTING, "type": float},
-                "max_battery_voltage": {"name": "Max Battery Voltage", "address": 50, "length": 2, "function": iRockFunctionType.STATUS, "type": float},
-                "min_battery_voltage": {"name": "Min Battery Voltage", "address": 52, "length": 2, "function": iRockFunctionType.STATUS, "type": float},
-                "temp1": {"name": "Temperature Sensor 1", "address": 54, "length": 2, "function": iRockFunctionType.STATUS, "type": float},
-                "temp2": {"name": "Temperature Sensor 2", "address": 56, "length": 2, "function": iRockFunctionType.STATUS, "type": float},
-                "temp3": {"name": "Temperature Sensor 3", "address": 58, "length": 2, "function": iRockFunctionType.STATUS, "type": float},
-                "temp4": {"name": "Temperature Sensor 4", "address": 60, "length": 2, "function": iRockFunctionType.STATUS, "type": float},
-                "temp_mos": {"name": "MOSFET Temperature", "address": 62, "length": 2, "function": iRockFunctionType.STATUS, "type": float},
+                "Manufacturer_ID": {"name": "Manufacturer ID", "address": 0, "length": 1, "type": int, "description": "Unique identifier of the manufacturer."},
+                "Modbus_Version": {"name": "Modbus Version", "address": 1, "length": 8, "type": Version, "description": "Modbus protocol version, as a string in semantic versioning format."},
+                "Hardware_Name": {"name": "Hardware Name", "address": 9, "length": 8, "type": str, "description": "Name of the iRock hardware."},
+                "Hardware_Version": {"name": "Hardware Version", "address": 17, "length": 4, "type": Version, "description": "Version identifier of the hardware, as a string in float format."},
+                "Serial_Number": {"name": "Serial Number", "address": 21, "length": 6, "type": str, "description": "Unique serial number of the iRock control board."},
+                "SW_Version": {"name": "Software Version", "address": 27, "length": 8, "type": Version, "description": "Software version currently installed, as a string in semantic versioning format."},
+                "Number_of_Cells": {"name": "Number of Cells", "address": 35, "length": 1, "type": int, "description": "Number of battery cells in the system."},
+                "Capacity": {"name": "Capacity", "address": 36, "length": 2, "type": float, "description": "Total capacity of the battery pack.", "unit": "Ah"},
+                "Battery_Voltage": {"name": "Battery Voltage", "address": 38, "length": 2, "type": float, "description": "Total voltage of the battery pack.", "unit": "V"},
+                "Battery_Current": {"name": "Battery Current", "address": 40, "length": 2, "type": float, "description": "Current flowing in or out of the battery.", "unit": "A"},
+                "Battery_SOC": {"name": "Battery State of Charge", "address": 42, "length": 2, "type": float, "description": "State of Charge (SOC) of the battery.", "unit": "%"},
+                "Remaining_Capacity": {"name": "Remaining Capacity", "address": 44, "length": 2, "type": float, "description": "Remaining available capacity in the battery pack.", "unit": "Ah"},
+                "Max_Charge_Current": {"name": "Max Charge Current", "address": 46, "length": 2, "type": float, "description": "Maximum current the battery can accept.", "unit": "A"},
+                "Max_Discharge_Current": {"name": "Max Discharge Current", "address": 48, "length": 2, "type": float, "description": "Maximum current the battery can deliver.", "unit": "A"},
+                "Max_Cell_Voltage": {"name": "Max Battery Voltage", "address": 50, "length": 2, "type": float, "description": "Maximum voltage recorded for any single cell.", "unit": "V"},
+                "Min_Cell_Voltage": {"name": "Min Battery Voltage", "address": 52, "length": 2, "type": float, "description": "Minimum voltage recorded for any single cell.", "unit": "V"},
+                "Temperature_Sensor_1": {"name": "Temperature Sensor 1", "address": 54, "length": 2, "type": float, "description": "Temperature reading from sensor 1.", "unit": "°C"},
+                "Temperature_Sensor_2": {"name": "Temperature Sensor 2", "address": 56, "length": 2, "type": float, "description": "Temperature reading from sensor 2.", "unit": "°C"},
+                "Temperature_Sensor_3": {"name": "Temperature Sensor 3", "address": 58, "length": 2, "type": float, "description": "Temperature reading from sensor 3.", "unit": "°C"},
+                "Temperature_Sensor_4": {"name": "Temperature Sensor 4", "address": 60, "length": 2, "type": float, "description": "Temperature reading from sensor 4.", "unit": "°C"},
+                "MOSFET_Temperature": {"name": "MOSFET Temperature", "address": 62, "length": 2, "type": float, "description": "MOSFET temperature sensor reading.", "unit": "°C"}
+            }
+    },{
+        "version": Version("2.0.0"),
+        "register":
+            {
+                "Manufacturer_ID": {"name": "Manufacturer ID", "address": 0, "length": 1, "type": int, "description": "Unique identifier of the manufacturer."},
+                "Modbus_Version": {"name": "Modbus Version", "address": 1, "length": 8, "type": Version, "description": "Modbus protocol version, as a string in semantic versioning format."},
+                "Hardware_Name": {"name": "Hardware Name", "address": 9, "length": 8, "type": str, "description": "Name of the iRock hardware."},
+                "Hardware_Version": {"name": "Hardware Version", "address": 17, "length": 4, "type": Version, "description": "Version identifier of the hardware, as a string in float format."},
+                "Serial_Number": {"name": "Serial Number", "address": 21, "length": 6, "type": str, "description": "Unique serial number of the iRock control board."},
+                "SW_Version": {"name": "Software Version", "address": 27, "length": 8, "type": Version, "description": "Software version currently installed, as a string in semantic versioning format."},
+                "Number_of_Cells": {"name": "Number of Cells", "address": 35, "length": 1, "type": int, "description": "Number of battery cells in the system."},
+                "Capacity": {"name": "Capacity", "address": 36, "length": 2, "type": float, "description": "Total capacity of the battery pack.", "unit": "Ah"},
+                "Battery_Voltage": {"name": "Battery Voltage", "address": 38, "length": 2, "type": float, "description": "Total voltage of the battery pack.", "unit": "V"},
+                "Battery_Current": {"name": "Battery Current", "address": 40, "length": 2, "type": float, "description": "Current flowing in or out of the battery.", "unit": "A", "hardware_support_register": 0},
+                "Battery_SOC": {"name": "Battery State of Charge", "address": 42, "length": 2, "type": float, "description": "State of Charge (SOC) of the battery.", "unit": "%", "hardware_support_register": 1},
+                "Remaining_Capacity": {"name": "Remaining Capacity", "address": 44, "length": 2, "type": float, "description": "Remaining available capacity in the battery pack.", "unit": "Ah", "hardware_support_register": 2},
+                "Max_Charge_Current": {"name": "Max Charge Current", "address": 46, "length": 2, "type": float, "description": "Maximum current the battery can accept.", "unit": "A"},
+                "Max_Discharge_Current": {"name": "Max Discharge Current", "address": 48, "length": 2, "type": float, "description": "Maximum current the battery can deliver.", "unit": "A"},
+                "Max_Cell_Voltage": {"name": "Max Battery Voltage", "address": 50, "length": 2, "type": float, "description": "Maximum voltage recorded for any single cell.", "unit": "V"},
+                "Min_Cell_Voltage": {"name": "Min Battery Voltage", "address": 52, "length": 2, "type": float, "description": "Minimum voltage recorded for any single cell.", "unit": "V"},
+                "Temperature_Sensor_1": {"name": "Temperature Sensor 1", "address": 54, "length": 2, "type": float, "description": "Temperature reading from sensor 1.", "unit": "°C", "hardware_support_register": 3},
+                "Temperature_Sensor_2": {"name": "Temperature Sensor 2", "address": 56, "length": 2, "type": float, "description": "Temperature reading from sensor 2.", "unit": "°C", "hardware_support_register": 4},
+                "Temperature_Sensor_3": {"name": "Temperature Sensor 3", "address": 58, "length": 2, "type": float, "description": "Temperature reading from sensor 3.", "unit": "°C", "hardware_support_register": 5},
+                "Temperature_Sensor_4": {"name": "Temperature Sensor 4", "address": 60, "length": 2, "type": float, "description": "Temperature reading from sensor 4.", "unit": "°C", "hardware_support_register": 6},
+                "MOSFET_Temperature": {"name": "MOSFET Temperature", "address": 62, "length": 2, "type": float, "description": "MOSFET temperature sensor reading.", "unit": "°C", "hardware_support_register": 7},
+                "Feedback_Shunt_Current": {"name": "Feedback Shunt Current", "address": 64, "length": 2, "type": float, "description": "Current flowing through the feedback shunt.", "unit": "A", "hardware_support_register": 8},
+                "Charge_FET": {"name": "Charge FET", "address": 66, "length": 1, "type": bool, "description": "Boolean indicating if the charge FET is active."},
+                "Discharge_FET": {"name": "Discharge FET", "address": 67, "length": 1, "type": bool, "description": "Boolean indicating if the discharge FET is active."},
+                "Alarm": {"name": "Alarm", "address": 68, "length": 1, "type": bool, "description": "Array of boolean values indicating which alarms are active."},
+                "Warning": {"name": "Warning", "address": 69, "length": 1, "type": bool, "description": "Array of boolean values indicating which warnings are active."}
             }
     }
 ]
+
 IROCK_MODBUS_CELL_REGISTERS = [
     {
         "version": Version("1.0.0"),
@@ -61,19 +140,21 @@ IROCK_MODBUS_CELL_REGISTERS = [
         "length": 4,
         "register":
             {
-                "voltage": {"name": "Cell Voltage", "address": 0, "length": 2, "function": iRockFunctionType.CELL, "type": float},
-                "balance": {"name": "Cell Balace Status", "address": 2, "length": 1, "function": iRockFunctionType.CELL, "type": bool},
+                "Cell_Voltage": {"name": "Cell Voltage", "offset": 0, "length": 2, "type": float, "description": "Voltage of cell.", "unit": "V"},
+                "Cell_Balance_Status": {"name": "Cell Balance Status", "offset": 2, "length": 1, "type": bool, "description": "Boolean indicating if the cells balancer is active."}
+            }
+    },
+    {
+        "version": Version("2.0.0"),
+        "offset": 70,
+        "length": 3,
+        "register":
+            {
+                "Cell_Voltage": {"name": "Cell Voltage", "offset": 0, "length": 2, "type": float, "description": "Voltage of cell.", "unit": "V"},
+                "Cell_Balance_Status": {"name": "Cell Balance Status", "offset": 2, "length": 1, "type": bool, "description": "Boolean indicating if the cells balancer is active."}
             }
     }
 ]
-
-IROCK_HARDWARE_FUNCTIONS = {
-    "iRock": {
-        "register": ["manufacturer_id", "modbus_version", "hardware_name"]},
-    "iRock 424": {
-        "register": ["manufacturer_id", "modbus_version", "hardware_name", "hardware_version", "serial_number", "sw_version", "cell_count", "capacity", "voltage", "current", "soc", "max_battery_charge_current", "max_battery_discharge_current", "max_battery_voltage", "min_battery_voltage", "temp1"],
-        "cell_register": ["voltage", "balance"]},
-}
 
 def timed_lru_cache(days: float = 0, seconds: float = 0, microseconds: float = 0, milliseconds: float = 0, minutes: float = 0, hours: float = 0, weeks: float = 0, maxsize: int = 128):
     """
@@ -98,6 +179,8 @@ def timed_lru_cache(days: float = 0, seconds: float = 0, microseconds: float = 0
     return wrapper
 
 class iRock(Battery):
+    BATTERYTYPE = "iRock"
+
     def __init__(self, port, baud, address):
         """
         Initialize the iRock battery with port, baud, and address.
@@ -108,8 +191,6 @@ class iRock(Battery):
         self.type = self.BATTERYTYPE
         self.serial_number: str = None
         self.hardware_name: str = None
-
-    BATTERYTYPE = "iRock"
     
     def custom_name(self) -> str:
         """
@@ -144,7 +225,7 @@ class iRock(Battery):
                 mbdevs[int.from_bytes(self.address, byteorder="big")] = mbdev
         try:
             found = self.get_field("hardware_name", found)
-            if self.hardware_name is not None:
+            if self.Hardware_Name is not None:
                 self.type = self.hardware_name
                 self.custom_name()
             found = self.get_field("hardware_version", found)
@@ -172,26 +253,28 @@ class iRock(Battery):
         """
         Retrieve settings for the iRock battery.
         """
+        # Mandatory values to set
         answer: bool = True
         answer = self.get_field("cell_count", answer)
         answer = self.get_field("capacity", answer)
         if not answer:
             logger.error(f"Can't get iRock settings")
             return False
-        
+        # Optional values to set
         answer = self.get_field("max_battery_charge_current", answer)
         answer = self.get_field("max_battery_discharge_current", answer)
+        answer = self.get_field("custom_field", answer)
+        answer = self.get_field("max_battery_voltage_bms", answer)
+        answer = self.get_field("min_battery_voltage_bms", answer)
+        answer = self.get_field("production", answer)
         answer = self.get_field("hardware_version", answer)
         answer = self.get_field("hardware_name", answer)
         answer = self.get_field("serial_number", answer)
-        answer = self.get_field("max_battery_voltage", answer)
-        answer = self.get_field("min_battery_voltage", answer)
-
+        # Create Cells
         if len(self.cells) == 0:
             for _ in range(self.cell_count):
                 self.cells.append(Cell(False))
-
-        return answer
+        return True
 
     def refresh_data(self) -> bool:
         """
@@ -205,27 +288,75 @@ class iRock(Battery):
         """
         Read status data from the iRock battery.
         """
-        #TODO: temp_sensors setzen
+        # Mandatory values to set
         answer: bool = True
         answer = self.get_field("voltage", answer)
         answer = self.get_field("current", answer)
         answer = self.get_field("soc", answer)
-        answer = self.get_field("temp1", answer)
-        answer = self.get_field("temp2", answer)
-        answer = self.get_field("temp3", answer)
-        answer = self.get_field("temp4", answer)
-        return answer
+        answer = self.get_field("soh", answer)
+        answer = self.get_field("temperature_1", answer)
+        answer = self.get_field("charge_fet", answer)
+        answer = self.get_field("discharge_fet", answer)
+        if not answer:
+            logger.error(f"Can't get iRock status")
+            return False
+        # Optional values to set
+        answer = self.get_field("capacity_remain", answer)
+        answer = self.get_field("temperature_2", answer)
+        answer = self.get_field("temperature_3", answer)
+        answer = self.get_field("temperature_4", answer)
+        answer = self.get_field("temperature_mos", answer)
+        answer = self.get_field("balance_fet", answer)
+        answer = self.get_field("protection.high_voltage", answer)
+        answer = self.get_field("protection.high_cell_voltage", answer)
+        answer = self.get_field("protection.low_voltage", answer)
+        answer = self.get_field("protection.low_cell_voltage", answer)
+        answer = self.get_field("protection.low_soc", answer)
+        answer = self.get_field("protection.high_charge_current", answer)
+        answer = self.get_field("protection.high_discharge_current", answer)
+        answer = self.get_field("protection.cell_imbalance", answer)
+        answer = self.get_field("protection.internal_failure", answer)
+        answer = self.get_field("protection.high_charge_temperature", answer)
+        answer = self.get_field("protection.low_charge_temperature", answer)
+        answer = self.get_field("protection.high_temperature", answer)
+        answer = self.get_field("protection.low_temperature", answer)
+        answer = self.get_field("protection.high_internal_temperature", answer)
+        answer = self.get_field("protection.fuse_blown", answer)
+        answer = self.get_field("history.deepest_discharge", answer)
+        answer = self.get_field("history.last_discharge", answer)
+        answer = self.get_field("history.average_discharge", answer)
+        answer = self.get_field("history.charge_cycles", answer)
+        answer = self.get_field("history.full_discharges", answer)
+        answer = self.get_field("history.total_ah_drawn", answer)
+        answer = self.get_field("history.minimum_voltage", answer)
+        answer = self.get_field("history.maximum_voltage", answer)
+        answer = self.get_field("history.minimum_cell_voltage", answer)
+        answer = self.get_field("history.maximum_cell_voltage", answer)
+        answer = self.get_field("history.timestamp_last_full_charge", answer)
+        answer = self.get_field("history.low_voltage_alarms", answer)
+        answer = self.get_field("history.high_voltage_alarms", answer)
+        answer = self.get_field("history.minimum_temperature", answer)
+        answer = self.get_field("history.maximum_temperature", answer)
+        answer = self.get_field("history.discharged_energy", answer)
+        answer = self.get_field("history.charged_energy", answer)
+        return True
 
     def read_cell_data(self) -> bool:
         """
         Read cell data from the iRock battery.
         """
+        # Mandatory values to set
         answer: bool = True
         for c in range(self.cell_count):
-            answer = self.get_field("voltage", answer, cell = c)
-            answer = self.get_field("balance", answer, cell = c)
-        return answer
-    
+            answer = self.get_cell_field("voltage", c, answer)
+        if not answer:
+            logger.error(f"Can't get iRock cell data")
+            return False
+        # Optional values to set
+        for c in range(self.cell_count):
+            answer = self.get_cell_field("balance", c, answer)
+        return True
+
     @timed_lru_cache(minutes=2)
     def get_modbus_version(self, address: str) -> Version:
         """
@@ -246,108 +377,99 @@ class iRock(Battery):
                     return modbus_version
         except Exception as e:
             logger.warning(f"Can't get iRock Modbus Version: {e}")
-            return None
-                
+        return None
+
+    @timed_lru_cache(minutes=2)
+    def get_modbus_hw_support(self, address: int) -> bool:
+        mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
+        with port_locks[self.port]:
+            with address_locks[self.address]:
+                try:
+                    result = mbdev.read_bit(address, 1)
+                    return result != 0
+                except Exception as e:
+                    logger.warning(f"Can't read iRock HW Support Coil: {e}")
+        return False
+
+    def get_modbus_value(self, address: int, type: ValueType, size: int = 1):
+        # TODO: Arrays are only supported for CHAR
+        mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
+        with port_locks[self.port]:
+            with address_locks[self.address]:
+                try:
+                    result = None
+                    if type == ValueType.CHAR:
+                        result = mbdev.read_string(address, size/2)
+                    elif type == ValueType.INT16:
+                        result = mbdev.read_register(address, signed=True)
+                    elif type == ValueType.UINT16:
+                        result = mbdev.read_register(address)
+                    elif type == ValueType.INT32:
+                        result = mbdev.read_long(address, signed=True)
+                    elif type == ValueType.UINT32:
+                        result = mbdev.read_long(address)
+                    elif type == ValueType.INT64:
+                        result = mbdev.read_long(address, signed=True, number_of_registers=4)
+                    elif type == ValueType.UINT64:
+                        result = mbdev.read_long(address, number_of_registers=4)
+                    elif type == ValueType.FLOAT32:
+                        result = mbdev.read_float(address, number_of_registers=2, byteorder=minimalmodbus.BYTEORDER_LITTLE_SWAP)
+                    elif type == ValueType.FLOAT64:
+                        result = mbdev.read_float(address, number_of_registers=4, byteorder=minimalmodbus.BYTEORDER_LITTLE_SWAP)
+                    elif type == ValueType.BOOL:
+                        result = mbdev.read_register(address) != 0
+                    if result is None:
+                        logger.warning(f"iRock field type {type} not supported")
+                    return result
+                except Exception as e:
+                    logger.warning(f"Can't get iRock type {type}: {e}")
+        return None
+
     @timed_lru_cache(seconds=1)
-    def get_field(self, name: str, andOperator: bool = True, cell: int = None) -> bool:
+    def get_field(self, name: str, andOperator: bool = True) -> bool:
         """
-        Get a specific field for the iRock battery.
+        Get a specific field from the iRock battery.
+        """
+        mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
+        modbusVersion: Version = self.get_modbus_version(self.address)        
+        # Lookup Modbus Register Name for a Dbus Serial Battery Name
+        for modbusRegisterTable in IROCK_MODBUS_REGISTERS:
+            if modbusRegisterTable.version.major == modbusVersion.major and modbusRegisterTable.version.minor == modbusVersion.minor:
+                for fieldname, fielddata in modbusRegisterTable.register.items():
+                    OrgName = IROCK_TO_LOCAL_FIELD_NAMES.fieldname
+                    if OrgName == name:
+                        if fielddata.hardware_support_register is not None:
+                            if not self.get_modbus_hw_support(fielddata.hardware_support_register):
+                                logger.warning(f"iRock Hardware Type \"{self.type}\" does not supported field {name}")
+                                return False
+                        value = self.get_modbus_value(fielddata.address,fielddata.type,fielddata.array_size)
+                        NP = OrgName.spilt(".")
+                        setattr(self[NP[0]], NP[1], value)
+                        return andOperator
+        logger.warning(f"iRock field {name} not found")
+        return False
+
+    @timed_lru_cache(seconds=1)
+    def get_cell_field(self, name: str, cell: int, andOperator: bool = True) -> bool:
+        """
+        Get a specific cell field from the iRock battery.
         """
         mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
         modbusVersion: Version = self.get_modbus_version(self.address)
-        
-
-        # Check if the cell is set
-        if cell is None:
-            # Iterate over each modbus registerlist
-            for modbusRegister in IROCK_MODBUS_REGISTERS:
-                # Check if the version of the modbus registerlist matches the modbus version of the battery
-                if modbusRegister['version'].major == modbusVersion.major and modbusRegister['version'].minor == modbusVersion.minor:
-                    # Iterate over each field in the modbus register
-                    for fieldname, fielddata in modbusRegister['register'].items():
-                        # Check if the field name matches the requested name
-                        if fieldname == name:
-                            # Get hardware functions for the iRock battery
-                            default_hardware_functions = IROCK_HARDWARE_FUNCTIONS.get("iRock").get("register")
-                            type_hardware_functions = IROCK_HARDWARE_FUNCTIONS.get(self.type).get("register")
-                            supported_hardware_functions = list(set(type_hardware_functions + default_hardware_functions))
-                            if supported_hardware_functions is None:
-                                logger.warning(f"iRock Hardware Type \"{self.type}\" not supported")
-                                return True
-                            # Check if the requested field is in the supported hardware functions
-                            if name in supported_hardware_functions:
-                                with port_locks[self.port]:
-                                    with address_locks[self.address]:
-                                        try:
-                                            logger.debug(f"iRock field {name} to be updated from address {fielddata['address']} with length {fielddata['length']} and datatype {fielddata['type']}")
-                                            result = None
-                                            if fielddata['type'] == str:
-                                                result = mbdev.read_string(fielddata["address"], fielddata["length"]).strip('\x00')
-                                            elif fielddata['type'] == int:
-                                                result = mbdev.read_register(fielddata["address"])
-                                            elif fielddata['type'] == float:
-                                                result = mbdev.read_float(fielddata["address"], number_of_registers=fielddata["length"], byteorder=3)
-                                            elif fielddata['type'] == Version:
-                                                result = str(Version.coerce(str(mbdev.read_string(fielddata["address"], fielddata["length"]).strip('\x00'))))
-                                            elif fielddata['type'] == bool:
-                                                register = mbdev.read_register(fielddata["address"])
-                                                result = register == 1
-                                            else:
-                                                logger.warning(f"iRock field type for field {name} not supported")
-                                                return False
-                                            if result is None:
-                                                logger.warning(f"iRock field {name} not found")
-                                                return False
-                                            setattr(self, name, result)
-                                            logger.info(f"iRock field {name}: {result}")
-                                            return andOperator and True
-                                        except Exception as e:
-                                            logger.warning(f"Can't get iRock field {name}: {e}")
-                            else:
-                                logger.info(f"iRock field {name} not supported for {self.type}")
-                                return True
-                    logger.warning(f"iRock field {name} not found")
-        else:
-            # Iterate over each modbus registerlist
-            for modbusCellRegister in IROCK_MODBUS_CELL_REGISTERS:
-                # Check if the version of the modbus registerlist matches the modbus version of the battery
-                if modbusCellRegister['version'].major == modbusVersion.major and modbusCellRegister['version'].minor == modbusVersion.minor:
-                    cellOfset = modbusCellRegister.get("offset")
-                    cellLength = modbusCellRegister.get("length")
-                    # Iterate over each field in the modbus register
-                    for fieldname, fielddata in modbusCellRegister['register'].items():
-                        # Check if the field name matches the requested name
-                        if fieldname == name:
-                            # Get hardware functions for the iRock battery
-                            supported_cell_hardware_functions = IROCK_HARDWARE_FUNCTIONS.get(self.type).get("cell_register")
-                            if supported_cell_hardware_functions is None:
-                                logger.warning(f"iRock Hardware Type \"{self.type}\" not supported")
-                                return True
-                            # Check if the requested field is in the supported hardware functions
-                            if name in supported_cell_hardware_functions:
-                                with port_locks[self.port]:
-                                    with address_locks[self.address]:
-                                        try:
-                                            logger.debug(f"iRock cell field {name} to be updated from address {fielddata['address'] + cell * cellLength + cellOfset} with length {fielddata['length']} and datatype {fielddata['type']}")
-                                            result = None
-                                            if fielddata['type'] == float:
-                                                result = mbdev.read_float(fielddata['address'] + cell * cellLength + cellOfset, number_of_registers=fielddata["length"], byteorder=3)
-                                            elif fielddata['type'] == bool:
-                                                register = mbdev.read_register(fielddata['address'] + cell * cellLength + cellOfset)
-                                                result = register == 1
-                                            else:
-                                                logger.warning(f"iRock field type for field {name} not supported")
-                                                return False
-                                            if result is None:
-                                                logger.warning(f"iRock field {name} not found")
-                                                return False
-                                            setattr(self.cells[cell], name, result)
-                                            logger.info(f"iRock field {name}: {result}")
-                                            return andOperator and True
-                                        except Exception as e:
-                                            logger.warning(f"Can't get iRock field {name}: {e}")
-                            else:
-                                logger.warning(f"iRock field {name} not supported for {self.type}")
-                    logger.warning(f"iRock field {name} not found")
-        logger.warning(f"ModBus Version {modbusVersion} not supported")
+        # Lookup Modbus Register Name for a Dbus Serial Battery Name
+        for modbusRegisterTable in IROCK_MODBUS_CELL_REGISTERS:
+            if modbusRegisterTable.version.major == modbusVersion.major and modbusRegisterTable.version.minor == modbusVersion.minor:
+                for fieldname, fielddata in modbusRegisterTable.register.items():
+                    OrgName = IROCK_TO_LOCAL_FIELD_NAMES.fieldname
+                    if OrgName == name:
+                        if fielddata.hardware_support_register is not None:
+                            if not self.get_modbus_hw_support(fielddata.hardware_support_register):
+                                logger.warning(f"iRock Hardware Type \"{self.type}\" does not supported field {name}")
+                                return False
+                        adr = modbusRegisterTable.offset + (modbusRegisterTable.length * (cell - 1)) + fielddata.offset
+                        value = self.get_modbus_value(adr,fielddata.type,fielddata.array_size)
+                        NP = OrgName.spilt(".")
+                        setattr(self.cell[cell][NP[0]], NP[1], value)
+                        return andOperator
+        logger.warning(f"iRock field {name} not found")
         return False

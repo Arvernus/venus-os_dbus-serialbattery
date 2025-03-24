@@ -410,7 +410,7 @@ class Battery(ABC):
 
     def init_values(self) -> None:
         """
-        Used to initialize and reset values, if battery unexpectly disconnects.
+        Used to initialize and reset values, if battery unexpected disconnects.
 
         :return: None
         """
@@ -516,7 +516,7 @@ class Battery(ABC):
     def refresh_data(self) -> bool:
         """
         Each driver must override this function to read battery data and populate this class.
-        It's called each poll inverval just before the data is published to the vedbus.
+        It's called each poll interval just before the data is published to the vedbus.
 
         :return: False when fail, True if successful
         """
@@ -720,7 +720,7 @@ class Battery(ABC):
                             + ' "config.ini".'
                         )
 
-                # meassurment and variation tolerance in volts, to prevent switching back and forth
+                # measurement and variation tolerance in volts, to prevent switching back and forth
                 measurement_tolerance_variation = 0.5
 
                 # Reset max_voltage_start_time when switching to bulk mode, regardless of the previous mode
@@ -808,7 +808,7 @@ class Battery(ABC):
                     self.soc_reset_last_reached = current_time
 
                 if self.control_voltage:
-                    # check if battery changed from bulk/absoprtion to float
+                    # check if battery changed from bulk/absorption to float
                     if self.charge_mode is not None and not self.charge_mode.startswith("Float"):
                         self.transition_start_time = current_time
                         self.initial_control_voltage = self.control_voltage
@@ -1938,10 +1938,10 @@ class Battery(ABC):
             # Calculate charge based on the current from last measurement until now
             charge = self.current_calc / 3600 * (current_time - self.current_calc_last_time)
 
-            # Coloumb count charged charge
+            # Colomb count charged charge
             self.charge_charged += charge if charge > 0 else 0
 
-            # Coloumb count discharged charge
+            # Colomb count discharged charge
             self.charge_discharged += charge * -1 if charge < 0 else 0
             self.charge_discharged_last += charge * -1 if charge < 0 else 0
 
@@ -1984,10 +1984,10 @@ class Battery(ABC):
             # Calculate energy based on the power from last measurement until now
             energy = self.power_calc / 3600 * (current_time - self.power_calc_last_time)
 
-            # Coloumb count charged energy
+            # Colomb count charged energy
             self.energy_charged += energy if energy > 0 else 0
 
-            # Coloumb count discharged energy
+            # Colomb count discharged energy
             self.energy_discharged += energy * -1 if energy < 0 else 0
 
         power = self.voltage * self.current_calc if self.current_calc is not None and self.voltage is not None else None
