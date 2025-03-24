@@ -325,7 +325,7 @@ class iRock(Battery):
                 try:
                     result = None
                     if type == BaseType.CHAR:
-                        result = mbdev.read_string(address, size/2)
+                        result = mbdev.read_string(address, int(size/2 + 0.5))  # Aufrunden
                     elif type == BaseType.INT16:
                         result = mbdev.read_register(address, signed=True)
                     elif type == BaseType.UINT16:
