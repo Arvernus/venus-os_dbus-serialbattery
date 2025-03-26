@@ -3250,6 +3250,14 @@
         "documentation": {}
     },
     {
+        "label": "Union",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
         "label": "Callable",
         "importPath": "typing",
         "description": "typing",
@@ -6426,6 +6434,22 @@
         "documentation": {}
     },
     {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Tuple",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
         "label": "threading",
         "kind": 6,
         "isExtraImport": true,
@@ -6530,15 +6554,6 @@
         "description": "serial.tools",
         "isExtraImport": true,
         "detail": "serial.tools",
-        "documentation": {}
-    },
-    {
-        "label": "minimalmodbus",
-        "kind": 6,
-        "isExtraImport": true,
-        "importPath": "minimalmodbus",
-        "description": "minimalmodbus",
-        "detail": "minimalmodbus",
         "documentation": {}
     },
     {
@@ -11017,6 +11032,33 @@
         "documentation": {}
     },
     {
+        "label": "zipfile",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "zipfile",
+        "description": "zipfile",
+        "detail": "zipfile",
+        "documentation": {}
+    },
+    {
+        "label": "yaml",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "yaml",
+        "description": "yaml",
+        "detail": "yaml",
+        "documentation": {}
+    },
+    {
+        "label": "importlib.util",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "importlib.util",
+        "description": "importlib.util",
+        "detail": "importlib.util",
+        "documentation": {}
+    },
+    {
         "label": "ANT",
         "kind": 6,
         "importPath": "dbus-serialbattery.bms.ant",
@@ -11305,11 +11347,11 @@
         "documentation": {}
     },
     {
-        "label": "ValueType",
+        "label": "BaseType",
         "kind": 6,
         "importPath": "dbus-serialbattery.bms.irock",
         "description": "dbus-serialbattery.bms.irock",
-        "peekOfCode": "class ValueType(Enum):\n    INT8 = \"int8\"\n    UINT8 = \"uint8\"\n    CHAR = \"char\"\n    INT16 = \"int16\"\n    UINT16 = \"uint16\"\n    INT32 = \"int32\"\n    UINT32 = \"uint32\"\n    INT64 = \"int64\"\n    UINT64 = \"uint64\"",
+        "peekOfCode": "class BaseType(Enum):\n    INT8 = \"int8\"\n    UINT8 = \"uint8\"\n    CHAR = \"char\"\n    INT16 = \"int16\"\n    UINT16 = \"uint16\"\n    INT32 = \"int32\"\n    UINT32 = \"uint32\"\n    INT64 = \"int64\"\n    UINT64 = \"uint64\"",
         "detail": "dbus-serialbattery.bms.irock",
         "documentation": {}
     },
@@ -11336,7 +11378,7 @@
         "kind": 5,
         "importPath": "dbus-serialbattery.bms.irock",
         "description": "dbus-serialbattery.bms.irock",
-        "peekOfCode": "IROCK_MODBUS_REGISTERS = [\n    {\n        \"version\": Version(\"1.0.0\"),\n        \"register\":\n            {\n                \"Manufacturer_ID\": {\"name\": \"Manufacturer ID\", \"address\": 0, \"length\": 1, \"type\": int, \"description\": \"Unique identifier of the manufacturer.\"},\n                \"Modbus_Version\": {\"name\": \"Modbus Version\", \"address\": 1, \"length\": 8, \"type\": Version, \"description\": \"Modbus protocol version, as a string in semantic versioning format.\"},\n                \"Hardware_Name\": {\"name\": \"Hardware Name\", \"address\": 9, \"length\": 8, \"type\": str, \"description\": \"Name of the iRock hardware.\"},\n                \"Hardware_Version\": {\"name\": \"Hardware Version\", \"address\": 17, \"length\": 4, \"type\": Version, \"description\": \"Version identifier of the hardware, as a string in float format.\"},\n                \"Serial_Number\": {\"name\": \"Serial Number\", \"address\": 21, \"length\": 6, \"type\": str, \"description\": \"Unique serial number of the iRock control board.\"},",
+        "peekOfCode": "IROCK_MODBUS_REGISTERS = [\n    {'version': Version('2.0.0'), 'register': {'Manufacturer_ID': {'name': 'Manufacturer ID', 'address': 0, 'array_size': 1, 'type': 'uint16', 'description': 'Unique identifier of the manufacturer.', 'unit': None, 'hardware_support_register': None}, 'Modbus_Version': {'name': 'Modbus Version', 'address': 1, 'array_size': 16, 'type': 'char', 'description': 'Modbus protocol version, as a string in semantic versioning format. This field may not change between versions of the protocol.', 'unit': None, 'hardware_support_register': None}, 'Hardware_Name': {'name': 'Hardware Name', 'address': 9, 'array_size': 16, 'type': 'char', 'description': 'Name of the iRock hardware. Options include: `iRock 200`, `iRock 300`, `iRock 400`, `iRock 212` or `iRock 424`.', 'unit': None, 'hardware_support_register': None}, 'Hardware_Version': {'name': 'Hardware Version', 'address': 17, 'array_size': 16, 'type': 'char', 'description': 'Version identifier of the hardware, as a string in semantic versioning format.', 'unit': None, 'hardware_support_register': None}, 'Serial_Number': {'name': 'Serial Number', 'address': 25, 'array_size': 8, 'type': 'char', 'description': 'Unique serial number of the iRock control board.', 'unit': None, 'hardware_support_register': None}, 'SW_Version': {'name': 'Software Version', 'address': 29, 'array_size': 16, 'type': 'char', 'description': 'Software version currently installed, as a string in semantic versioning format.', 'unit': None, 'hardware_support_register': None}, 'Number_of_Cells': {'name': 'Number of Cells', 'address': 37, 'array_size': 1, 'type': 'uint16', 'description': 'Number of battery cells in the system. May be 4, 8 or 16.', 'unit': None, 'hardware_support_register': None}, 'Battery_Voltage': {'name': 'Battery Voltage', 'address': 38, 'array_size': 1, 'type': 'float32', 'description': 'Total voltage of the battery pack.', 'unit': 'V', 'hardware_support_register': None}, 'Battery_Current': {'name': 'Battery Current', 'address': 40, 'array_size': 1, 'type': 'float32', 'description': 'Current flowing in or out of the battery. Positive values indicate charging, negative values indicate discharging.', 'unit': 'A', 'hardware_support_register': 0}, 'Battery_SOC': {'name': 'SOC', 'address': 42, 'array_size': 1, 'type': 'float32', 'description': 'State of Charge (SOC) of the battery.', 'unit': '%', 'hardware_support_register': 1}, 'Capacity': {'name': 'Capacity', 'address': 44, 'array_size': 1, 'type': 'float32', 'description': 'Total capacity of the battery pack.', 'unit': 'Ah', 'hardware_support_register': None}, 'Remaining_Capacity': {'name': 'Remaining Capacity', 'address': 46, 'array_size': 1, 'type': 'float32', 'description': 'Remaining available capacity in the battery pack.', 'unit': 'Ah', 'hardware_support_register': 2}, 'Max_Charge_Current': {'name': 'Max Charge Current', 'address': 48, 'array_size': 1, 'type': 'float32', 'description': 'Maximum current the battery can accept.', 'unit': 'A', 'hardware_support_register': None}, 'Max_Discharge_Current': {'name': 'Max Discharge Current', 'address': 50, 'array_size': 1, 'type': 'float32', 'description': 'Maximum current the battery can deliver.', 'unit': 'A', 'hardware_support_register': None}, 'Max_Cell_Voltage': {'name': 'Max Cell Voltage', 'address': 52, 'array_size': 1, 'type': 'float32', 'description': 'Maximum voltage recorded for any single cell.', 'unit': 'V', 'hardware_support_register': None}, 'Min_Cell_Voltage': {'name': 'Min Cell Voltage', 'address': 54, 'array_size': 1, 'type': 'float32', 'description': 'Minimum voltage recorded for any single cell.', 'unit': 'V', 'hardware_support_register': None}, 'Temperature_Sensor_1': {'name': 'Temperature Sensor 1', 'address': 56, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 1.', 'unit': '°C', 'hardware_support_register': 3}, 'Temperature_Sensor_2': {'name': 'Temperature Sensor 2', 'address': 58, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 2.', 'unit': '°C', 'hardware_support_register': 4}, 'Temperature_Sensor_3': {'name': 'Temperature Sensor 3', 'address': 60, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 3.', 'unit': '°C', 'hardware_support_register': 5}, 'Temperature_Sensor_4': {'name': 'Temperature Sensor 4', 'address': 62, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 4.', 'unit': '°C', 'hardware_support_register': 6}, 'MOSFET_Temperature': {'name': 'MOSFET Temperature', 'address': 64, 'array_size': 1, 'type': 'float32', 'description': 'MOSFET temperature sensor reading.', 'unit': '°C', 'hardware_support_register': 7}, 'Feedback_Shunt_Current': {'name': 'Feedback Shunt Current', 'address': 66, 'array_size': 1, 'type': 'float32', 'description': 'Current flowing through the feedback shunt. The feedback shunt measures the current of all balancers in sum.', 'unit': 'A', 'hardware_support_register': 8}, 'Charge_FET': {'name': 'Charge FET', 'address': 68, 'array_size': 1, 'type': 'bool', 'description': 'Boolean indicating if the charge FET is active. `true` indicates active, `false` indicates inactive.', 'unit': None, 'hardware_support_register': 9}, 'Discharge_FET': {'name': 'Discharge FET', 'address': 69, 'array_size': 1, 'type': 'bool', 'description': 'Boolean indicating if the discharge FET is active. `true` indicates active, `false` indicates inactive.', 'unit': None, 'hardware_support_register': 10}, 'Allow_Charge': {'name': 'Allow Charge', 'address': 70, 'array_size': 1, 'type': 'bool', 'description': 'Boolean indicating if charging is allowed. `true` indicates allowed, `false` indicates disallowed.', 'unit': None, 'hardware_support_register': 11}, 'Allow_Discharge': {'name': 'Allow Discharge', 'address': 71, 'array_size': 1, 'type': 'bool', 'description': 'Boolean indicating if discharging is allowed. `true` indicates allowed, `false` indicates disallowed.', 'unit': None, 'hardware_support_register': 12}, 'Low_Voltage_Alarm': {'name': 'Low Voltage Alarm', 'address': 72, 'array_size': 1, 'type': 'uint16', 'description': 'Alarm Status for low battery voltage. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': None}, 'High_Voltage_Alarm': {'name': 'High Voltage Alarm', 'address': 73, 'array_size': 1, 'type': 'uint16', 'description': 'Alarm Status for high battery voltage. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': None}, 'Low_Cell_Voltage_Alarm': {'name': 'Low Cell Voltage Alarm', 'address': 74, 'array_size': 1, 'type': 'uint16', 'description': 'Alarm Status for low cell voltage. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': None}, 'High_Cell_Voltage_Alarm': {'name': 'High Cell Voltage Alarm', 'address': 75, 'array_size': 1, 'type': 'uint16', 'description': 'Alarm Status for high cell voltage. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': None}, 'Low_SOC_Alarm': {'name': 'Low SOC Alarm', 'address': 76, 'array_size': 1, 'type': 'uint16', 'description': 'Alarm Status for low SOC. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': 13}, 'High_Charge_Current_Alarm': {'name': 'High Charge Current Alarm', 'address': 77, 'array_size': 1, 'type': 'uint16', 'description': 'Alarm Status for high charge current. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': 14}, 'High_Discharge_Current_Alarm': {'name': 'High Discharge Current Alarm', 'address': 78, 'array_size': 1, 'type': 'uint16', 'description': 'Alarm Status for high discharge current. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': 15}, 'Temperature_Alarm': {'name': 'Temperature Alarm', 'address': 79, 'array_size': 1, 'type': 'uint16', 'description': 'Alarm Status for high temperature. No Alarm may be `0`, Warnings may be `1` and Alarms may be `2`.', 'unit': None, 'hardware_support_register': 16}}},\n    {'version': Version('1.0.0'), 'register': {'Manufacturer_ID': {'name': 'Manufacturer ID', 'address': 0, 'array_size': 1, 'type': 'uint16', 'description': 'Unique identifier of the manufacturer.', 'unit': None, 'hardware_support_register': None}, 'Modbus_Version': {'name': 'Modbus Version', 'address': 1, 'array_size': 16, 'type': 'char', 'description': 'Modbus protocol version, as a string in semantic versioning format. This field may not change between versions of the protocol.', 'unit': None, 'hardware_support_register': None}, 'Hardware_Name': {'name': 'Hardware Name', 'address': 9, 'array_size': 16, 'type': 'char', 'description': 'Name of the iRock hardware. Options include: `iRock 200`, `iRock 300`, `iRock 400`, `iRock 212` or `iRock 424`.', 'unit': None, 'hardware_support_register': None}, 'Hardware_Version': {'name': 'Hardware Version', 'address': 17, 'array_size': 8, 'type': 'char', 'description': 'Version identifier of the hardware, as a string in float format.', 'unit': None, 'hardware_support_register': None}, 'Serial_Number': {'name': 'Serial Number', 'address': 21, 'array_size': 12, 'type': 'char', 'description': 'Unique serial number of the iRock control board.', 'unit': None, 'hardware_support_register': None}, 'SW_Version': {'name': 'Software Version', 'address': 27, 'array_size': 16, 'type': 'char', 'description': 'Software version currently installed, as a string in semantic versioning format.', 'unit': None, 'hardware_support_register': None}, 'Number_of_Cells': {'name': 'Number of Cells', 'address': 35, 'array_size': 1, 'type': 'uint16', 'description': 'Number of battery cells in the system. May be any number between 2 and 24.', 'unit': None, 'hardware_support_register': None}, 'Battery_Voltage': {'name': 'Battery Voltage', 'address': 36, 'array_size': 1, 'type': 'float32', 'description': 'Total voltage of the battery pack.', 'unit': 'V', 'hardware_support_register': None}, 'Battery_Current': {'name': 'Battery Current', 'address': 38, 'array_size': 1, 'type': 'float32', 'description': 'Current flowing in or out of the battery. Positive values indicate charging, negative values indicate discharging.', 'unit': 'A', 'hardware_support_register': None}, 'Battery_SOC': {'name': 'SOC', 'address': 40, 'array_size': 1, 'type': 'float32', 'description': 'State of Charge (SOC) of the battery.', 'unit': '%', 'hardware_support_register': None}, 'Capacity': {'name': 'Capacity', 'address': 42, 'array_size': 1, 'type': 'float32', 'description': 'Total capacity of the battery pack.', 'unit': 'Ah', 'hardware_support_register': None}, 'Remaining_Capacity': {'name': 'Remaining Capacity', 'address': 44, 'array_size': 1, 'type': 'float32', 'description': 'Remaining available capacity in the battery pack.', 'unit': 'Ah', 'hardware_support_register': None}, 'Max_Charge_Current': {'name': 'Max Charge Current', 'address': 46, 'array_size': 1, 'type': 'float32', 'description': 'Maximum current the battery can accept.', 'unit': 'A', 'hardware_support_register': None}, 'Max_Discharge_Current': {'name': 'Max Discharge Current', 'address': 48, 'array_size': 1, 'type': 'float32', 'description': 'Maximum current the battery can deliver.', 'unit': 'A', 'hardware_support_register': None}, 'Max_Cell_Voltage': {'name': 'Max Cell Voltage', 'address': 50, 'array_size': 1, 'type': 'float32', 'description': 'Maximum voltage recorded for any single cell.', 'unit': 'V', 'hardware_support_register': None}, 'Min_Cell_Voltage': {'name': 'Min Cell Voltage', 'address': 52, 'array_size': 1, 'type': 'float32', 'description': 'Minimum voltage recorded for any single cell.', 'unit': 'V', 'hardware_support_register': None}, 'Temperature_Sensor_1': {'name': 'Temperature Sensor 1', 'address': 54, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 1.', 'unit': '°C', 'hardware_support_register': None}, 'Temperature_Sensor_2': {'name': 'Temperature Sensor 2', 'address': 56, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 2.', 'unit': '°C', 'hardware_support_register': None}, 'Temperature_Sensor_3': {'name': 'Temperature Sensor 3', 'address': 58, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 3.', 'unit': '°C', 'hardware_support_register': None}, 'Temperature_Sensor_4': {'name': 'Temperature Sensor 4', 'address': 60, 'array_size': 1, 'type': 'float32', 'description': 'Temperature reading from sensor 4.', 'unit': '°C', 'hardware_support_register': None}, 'MOSFET_Temperature': {'name': 'MOSFET Temperature', 'address': 62, 'array_size': 1, 'type': 'float32', 'description': 'MOSFET temperature sensor reading.', 'unit': '°C', 'hardware_support_register': None}}},\n]\nIROCK_MODBUS_CELL_REGISTERS = [\n    {'version': Version('2.0.0'), 'offset': 80, 'length': 3, 'register': {'Cell_Voltage': {'name': 'Cell Voltage', 'offset': 0, 'array_size': 1, 'type': 'float32', 'description': 'Voltage of cell.', 'unit': 'V', 'hardware_support_register': None}, 'Cell_Balance_Status': {'name': 'Cell Balance Status', 'offset': 2, 'array_size': 1, 'type': 'bool', 'description': 'Boolean indicating if the cells balancer is active. `true` indicates active, `false` indicates inactive.', 'unit': None, 'hardware_support_register': None}}},\n    {'version': Version('1.0.0'), 'offset': 64, 'length': 4, 'register': {'Cell_Voltage': {'name': 'Cell Voltage', 'offset': 0, 'array_size': 1, 'type': 'float32', 'description': 'Voltage of cell.', 'unit': 'V', 'hardware_support_register': None}, 'Cell_Balance_Status': {'name': 'Cell Balance Status', 'offset': 2, 'array_size': 1, 'type': 'bool', 'description': 'Boolean indicating if the cells balancer is active. `true` indicates active, `false` indicates inactive.', 'unit': None, 'hardware_support_register': None}, 'res': {'name': 'Reserved', 'offset': 3, 'array_size': 1, 'type': 'uint16', 'description': 'Reserved', 'unit': None, 'hardware_support_register': None}}},\n]\ndef timed_lru_cache(days: float = 0, seconds: float = 0, microseconds: float = 0, milliseconds: float = 0, minutes: float = 0, hours: float = 0, weeks: float = 0, maxsize: int = 128):\n    \"\"\"",
         "detail": "dbus-serialbattery.bms.irock",
         "documentation": {}
     },
@@ -11345,7 +11387,7 @@
         "kind": 5,
         "importPath": "dbus-serialbattery.bms.irock",
         "description": "dbus-serialbattery.bms.irock",
-        "peekOfCode": "IROCK_MODBUS_CELL_REGISTERS = [\n    {\n        \"version\": Version(\"1.0.0\"),\n        \"offset\": 64,\n        \"length\": 4,\n        \"register\":\n            {\n                \"Cell_Voltage\": {\"name\": \"Cell Voltage\", \"offset\": 0, \"length\": 2, \"type\": float, \"description\": \"Voltage of cell.\", \"unit\": \"V\"},\n                \"Cell_Balance_Status\": {\"name\": \"Cell Balance Status\", \"offset\": 2, \"length\": 1, \"type\": bool, \"description\": \"Boolean indicating if the cells balancer is active.\"}\n            }",
+        "peekOfCode": "IROCK_MODBUS_CELL_REGISTERS = [\n    {'version': Version('2.0.0'), 'offset': 80, 'length': 3, 'register': {'Cell_Voltage': {'name': 'Cell Voltage', 'offset': 0, 'array_size': 1, 'type': 'float32', 'description': 'Voltage of cell.', 'unit': 'V', 'hardware_support_register': None}, 'Cell_Balance_Status': {'name': 'Cell Balance Status', 'offset': 2, 'array_size': 1, 'type': 'bool', 'description': 'Boolean indicating if the cells balancer is active. `true` indicates active, `false` indicates inactive.', 'unit': None, 'hardware_support_register': None}}},\n    {'version': Version('1.0.0'), 'offset': 64, 'length': 4, 'register': {'Cell_Voltage': {'name': 'Cell Voltage', 'offset': 0, 'array_size': 1, 'type': 'float32', 'description': 'Voltage of cell.', 'unit': 'V', 'hardware_support_register': None}, 'Cell_Balance_Status': {'name': 'Cell Balance Status', 'offset': 2, 'array_size': 1, 'type': 'bool', 'description': 'Boolean indicating if the cells balancer is active. `true` indicates active, `false` indicates inactive.', 'unit': None, 'hardware_support_register': None}, 'res': {'name': 'Reserved', 'offset': 3, 'array_size': 1, 'type': 'uint16', 'description': 'Reserved', 'unit': None, 'hardware_support_register': None}}},\n]\ndef timed_lru_cache(days: float = 0, seconds: float = 0, microseconds: float = 0, milliseconds: float = 0, minutes: float = 0, hours: float = 0, weeks: float = 0, maxsize: int = 128):\n    \"\"\"\n    Decorator that applies an LRU cache with a timed expiration to a function.\n    \"\"\"\n    def wrapper(func):\n        func = functools.lru_cache(maxsize=maxsize)(func)",
         "detail": "dbus-serialbattery.bms.irock",
         "documentation": {}
     },
@@ -36637,6 +36679,87 @@
         "description": "rc.notify",
         "peekOfCode": "KIOCSOUND = 0x4B2F\ndef beep(console_fd, frequency=440):\n    if os.path.exists(\"/sys/class/gpio/gpio35/value\") and os.uname().nodename == \"ccgx\" and frequency > 0:\n        with open(\"/sys/class/gpio/gpio35/value\", \"w\") as beep_file:\n            beep_file.write(\"1\")\n        time.sleep(0.2)\n        with open(\"/sys/class/gpio/gpio35/value\", \"w\") as beep_file:\n            beep_file.write(\"0\")\n    else:\n        period = 0 if frequency == 0 else CLOCK_TICK_RATE // frequency",
         "detail": "rc.notify",
+        "documentation": {}
+    },
+    {
+        "label": "install_package",
+        "kind": 2,
+        "importPath": "scripts.process_releases",
+        "description": "scripts.process_releases",
+        "peekOfCode": "def install_package(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\ndef fetch_releases():\n    url = \"https://api.github.com/repos/Arvernus/iRock-Modbus/releases\"\n    logger.info(f\"Fetching releases from {url}\")\n    response = requests.get(url)\n    response.raise_for_status()\n    return response.json()\ndef fetch_validate_yaml():\n    url = \"https://raw.githubusercontent.com/Arvernus/iRock-Modbus/main/validate_yaml.py\"",
+        "detail": "scripts.process_releases",
+        "documentation": {}
+    },
+    {
+        "label": "fetch_releases",
+        "kind": 2,
+        "importPath": "scripts.process_releases",
+        "description": "scripts.process_releases",
+        "peekOfCode": "def fetch_releases():\n    url = \"https://api.github.com/repos/Arvernus/iRock-Modbus/releases\"\n    logger.info(f\"Fetching releases from {url}\")\n    response = requests.get(url)\n    response.raise_for_status()\n    return response.json()\ndef fetch_validate_yaml():\n    url = \"https://raw.githubusercontent.com/Arvernus/iRock-Modbus/main/validate_yaml.py\"\n    logger.info(f\"Fetching validate_yaml.py from {url}\")\n    response = requests.get(url)",
+        "detail": "scripts.process_releases",
+        "documentation": {}
+    },
+    {
+        "label": "fetch_validate_yaml",
+        "kind": 2,
+        "importPath": "scripts.process_releases",
+        "description": "scripts.process_releases",
+        "peekOfCode": "def fetch_validate_yaml():\n    url = \"https://raw.githubusercontent.com/Arvernus/iRock-Modbus/main/validate_yaml.py\"\n    logger.info(f\"Fetching validate_yaml.py from {url}\")\n    response = requests.get(url)\n    response.raise_for_status()\n    return response.content\ndef load_validate_yaml_module(data):\n    spec = importlib.util.spec_from_loader(\"validate_yaml\", loader=None)\n    validate_yaml = importlib.util.module_from_spec(spec)\n    exec(data, validate_yaml.__dict__)",
+        "detail": "scripts.process_releases",
+        "documentation": {}
+    },
+    {
+        "label": "load_validate_yaml_module",
+        "kind": 2,
+        "importPath": "scripts.process_releases",
+        "description": "scripts.process_releases",
+        "peekOfCode": "def load_validate_yaml_module(data):\n    spec = importlib.util.spec_from_loader(\"validate_yaml\", loader=None)\n    validate_yaml = importlib.util.module_from_spec(spec)\n    exec(data, validate_yaml.__dict__)\n    sys.modules[\"validate_yaml\"] = validate_yaml\n    return validate_yaml\ndef extract_file_from_zip(data, filename):\n    logger.info(f\"Extracting {filename} from ZIP\")\n    try:\n        with zipfile.ZipFile(io.BytesIO(data)) as z:",
+        "detail": "scripts.process_releases",
+        "documentation": {}
+    },
+    {
+        "label": "extract_file_from_zip",
+        "kind": 2,
+        "importPath": "scripts.process_releases",
+        "description": "scripts.process_releases",
+        "peekOfCode": "def extract_file_from_zip(data, filename):\n    logger.info(f\"Extracting {filename} from ZIP\")\n    try:\n        with zipfile.ZipFile(io.BytesIO(data)) as z:\n            logger.info(\"ZIP file opened successfully\")\n            for file_name in z.namelist():\n                if file_name.endswith(filename):\n                    with z.open(file_name) as f:\n                        logger.info(f\"{filename} found in ZIP file\")\n                        return f.read()",
+        "detail": "scripts.process_releases",
+        "documentation": {}
+    },
+    {
+        "label": "process_release_data",
+        "kind": 2,
+        "importPath": "scripts.process_releases",
+        "description": "scripts.process_releases",
+        "peekOfCode": "def process_release_data(release, validate_yaml) -> Tuple[dict, dict]:\n    logger.info(f\"Processing release: {release['tag_name']}\")\n    data_url = release['zipball_url']\n    logger.info(f\"Downloading data from {data_url}\")\n    data_response = requests.get(data_url)\n    data_response.raise_for_status()\n    data = data_response.content\n    data_yaml = extract_file_from_zip(data, 'data.yaml')\n    if data_yaml:\n        data_yaml = yaml.safe_load(data_yaml)",
+        "detail": "scripts.process_releases",
+        "documentation": {}
+    },
+    {
+        "label": "replace_constant",
+        "kind": 2,
+        "importPath": "scripts.process_releases",
+        "description": "scripts.process_releases",
+        "peekOfCode": "def replace_constant(content: str, constant_name: str, new_data: List[dict]) -> str:\n    pattern = re.compile(rf\"{constant_name} = \\[.*?\\]\", re.DOTALL)\n    replacement = f\"{constant_name} = [\\n\"\n    for item in new_data:\n        replacement += f\"    {repr(item)},\\n\"\n    replacement += \"]\"\n    return pattern.sub(replacement, content)\ndef main():\n    logger.info(\"Starting process to fetch and process releases\")\n    try:",
+        "detail": "scripts.process_releases",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "kind": 2,
+        "importPath": "scripts.process_releases",
+        "description": "scripts.process_releases",
+        "peekOfCode": "def main():\n    logger.info(\"Starting process to fetch and process releases\")\n    try:\n        import jsonschema\n    except ImportError:\n        logger.info(\"jsonschema not found, installing...\")\n        install_package(\"jsonschema\")\n    validate_yaml_data = fetch_validate_yaml()\n    validate_yaml = load_validate_yaml_module(validate_yaml_data)\n    releases = fetch_releases()",
+        "detail": "scripts.process_releases",
+        "documentation": {}
+    },
+    {
+        "label": "logger",
+        "kind": 5,
+        "importPath": "scripts.process_releases",
+        "description": "scripts.process_releases",
+        "peekOfCode": "logger = logging.getLogger(__name__)\ndef install_package(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\ndef fetch_releases():\n    url = \"https://api.github.com/repos/Arvernus/iRock-Modbus/releases\"\n    logger.info(f\"Fetching releases from {url}\")\n    response = requests.get(url)\n    response.raise_for_status()\n    return response.json()\ndef fetch_validate_yaml():",
+        "detail": "scripts.process_releases",
         "documentation": {}
     },
     {
