@@ -32,6 +32,15 @@ jobs:
           sed -i 's/self\.telemetry_upload_interval: int =.*/self.telemetry_upload_interval: int = 60 * 60 * 24  # 1 day/' dbus-serialbattery/dbushelper.py
           grep -n "self.telemetry_upload_interval: int =" dbus-serialbattery/dbushelper.py
 
+      - name: Change log size for release versions
+        run: |
+          grep -n "exec multilog" dbus-serialbattery/enable.sh
+          grep -n "exec multilog" dbus-serialbattery/service/log/run
+          sed -i 's/exec multilog t s500000 n4/exec multilog t s25000 n4/' dbus-serialbattery/enable.sh
+          sed -i 's/exec multilog t s500000 n4/exec multilog t s25000 n4/' dbus-serialbattery/service/log/run
+          grep -n "exec multilog" dbus-serialbattery/enable.sh
+          grep -n "exec multilog" dbus-serialbattery/service/log/run
+
       - name: Copy changelog
         run: |
           cp CHANGELOG.md dbus-serialbattery/

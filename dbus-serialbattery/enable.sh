@@ -115,6 +115,7 @@ if [ ! -f "$filename" ]; then
         echo
         echo "; If you want to add custom values/settings, then check the values/settings you want to change in \"config.default.ini\""
         echo "; and insert them below to persist future driver updates."
+        echo "; NOTICE: Do not copy the whole file, but only the values/settings you want to change."
         echo
         echo "; Example (remove the semicolon \";\" to uncomment and activate the value/setting):"
         echo "; MAX_BATTERY_CHARGE_CURRENT = 50.0"
@@ -126,14 +127,13 @@ fi
 
 
 
-# TODO: stop BLE, CAN and serial?
+# stop all dbus-serialbattery services, if at least one exists
 echo "Stop all dbus-serialbattery services..."
 for service in /service/dbus-serialbattery.*; do
     [ -e "$service" ] && svc -d "$service"
 done
-for service in /service/dbus-canbattery.*; do
-    [ -e "$service" ] && svc -d "$service"
-done
+
+sleep 1
 
 # kill driver, if still running
 pkill -f "supervise dbus-serialbattery.*"
@@ -143,25 +143,6 @@ pkill -f "python .*/dbus-serialbattery.py /dev/tty.*"
 
 
 ### BLUETOOTH PART | START ###
-
-# get bluetooth mode integrated/usb
-bluetooth_use_usb=$(awk -F "=" '/^BLUETOOTH_USE_USB/ {print $2}' /data/apps/dbus-serialbattery/config.ini)
-
-# works only for Raspberry Pi, since GX devices don't have a /u-boot/config.txt
-# replace dtoverlay in /u-boot/config.txt this needs a reboot!
-if [ -f "/u-boot/config.txt" ]; then
-    if [[ $bluetooth_use_usb == *"True"* ]]; then
-        if grep -q -r "miniuart-bt" /u-boot/config.txt; then
-            sed -i 's/miniuart-bt/disable-bt/g' /u-boot/config.txt
-            echo "ATTENTION! You have changed the bluetooth mode to USB! THIS NEEDS A MANUAL REBOOT!"
-        fi
-    elif [[ $bluetooth_use_usb == *"False"* ]]; then
-        if grep -q -r "disable-bt" /u-boot/config.txt; then
-            sed -i 's/disable-bt/miniuart-bt/g' /u-boot/config.txt
-            echo "ATTENTION! You have changed the bluetooth mode to built in module! THIS NEEDS A MANUAL REBOOT!"
-        fi
-    fi
-fi
 
 # get BMS list from config file
 bluetooth_bms=$(awk -F "=" '/^BLUETOOTH_BMS/ {print $2}' /data/apps/dbus-serialbattery/config.ini)
@@ -185,6 +166,8 @@ if ls /service/dbus-blebattery.* 1> /dev/null 2>&1; then
         [ -e "$service" ] && svc -d "$service"
     done
 
+    sleep 1
+
     # always remove existing blebattery services to cleanup
     rm -rf /service/dbus-blebattery.*
 
@@ -203,6 +186,47 @@ if [ "$bluetooth_length" -gt 0 ]; then
     echo
     echo "Found $bluetooth_length Bluetooth BMS in the config file!"
     echo
+
+    # get bluetooth mode integrated/usb
+    bluetooth_use_usb=$(awk -F "=" '/^BLUETOOTH_USE_USB/ {print $2}' /data/apps/dbus-serialbattery/config.ini)
+
+    # works only for Raspberry Pi, since GX devices don't have a /u-boot/config.txt
+    # replace dtoverlay in /u-boot/config.txt this needs a reboot!
+    # Check if /u-boot/config.txt exists
+    if [[ $bluetooth_use_usb == *"True"* ]]; then
+        if [ -f "/u-boot/config.txt" ]; then
+            # Disable built-in Bluetooth
+            if grep -q "^dtoverlay=" "/u-boot/config.txt"; then
+                # Check if 'disable-bt' is already in a dtoverlay line
+                if grep -q "^dtoverlay=.*disable-bt" "/u-boot/config.txt"; then
+                    echo "Build-in Bluetooth is disabled, use external Bluetooth dongle."
+                else
+                    # Add 'disable-bt' to the end of an existing dtoverlay line
+                    sed -i '/^dtoverlay=/s/$/,disable-bt/' /u-boot/config.txt
+                    echo "NOTICE! Build-in Bluetooth was disabled: 'disable-bt' has been added to the dtoverlay list. THIS NEEDS A MANUAL REBOOT!"
+                fi
+            else
+                # Add a new dtoverlay line for disable-bt if none exist
+                echo "dtoverlay=disable-bt" >> /u-boot/config.txt
+                echo "NOTICE! Build-in Bluetooth was disabled: 'disable-bt' has been added as a new dtoverlay. THIS NEEDS A MANUAL REBOOT!"
+            fi
+        else
+            echo "WARNING: /u-boot/config.txt does not exist. This script only works on Raspberry Pi devices. This setting is ignored and build-in Bluetooth is used."
+        fi
+    else
+        if [ -f "/u-boot/config.txt" ]; then
+            # Enable built-in Bluetooth
+            if grep -q "^dtoverlay=.*disable-bt" "/u-boot/config.txt"; then
+                # Remove 'disable-bt' from an existing dtoverlay line
+                sed -i '/^dtoverlay=/s/disable-bt,//g' /u-boot/config.txt  # Case: disable-bt is not at the end
+                sed -i '/^dtoverlay=/s/,disable-bt//g' /u-boot/config.txt  # Case: disable-bt is at the end
+                sed -i '/^dtoverlay=/s/disable-bt//g' /u-boot/config.txt   # Case: disable-bt is the only entry
+                echo "NOTICE! Build-in Bluetooth was enabled: 'disable-bt' has been removed from the dtoverlay list. THIS NEEDS A MANUAL REBOOT!"
+            else
+                echo "Build-in Bluetooth is used."
+            fi
+        fi
+    fi
 
     # Required packages, shipped with the driver:
     # - opkg install python3-misc
@@ -237,7 +261,7 @@ if [ "$bluetooth_length" -gt 0 ]; then
         mkdir -p "/service/dbus-blebattery.$1/log"
         {
             echo "#!/bin/sh"
-            echo "exec multilog t s25000 n4 /var/log/dbus-blebattery.$1"
+            echo "exec multilog t s500000 n4 /var/log/dbus-blebattery.$1"
         } > "/service/dbus-blebattery.$1/log/run"
         chmod 755 "/service/dbus-blebattery.$1/log/run"
 
@@ -314,8 +338,10 @@ can_lenght=${#can_array[@]}
 
 # stop all dbus-canbattery services, if at least one exists
 if ls /service/dbus-canbattery.* 1> /dev/null 2>&1; then
-    echo "Killing old CAN battery services..."
-    svc -t /service/dbus-canbattery.*
+    echo "Stop all dbus-serialbattery services..."
+    for service in /service/dbus-canbattery.*; do
+        [ -e "$service" ] && svc -d "$service"
+    done
 
     # always remove existing canbattery services to cleanup
     rm -rf /service/dbus-canbattery.*
@@ -351,7 +377,7 @@ if [ "$can_lenght" -gt 0 ]; then
         mkdir -p "/service/dbus-canbattery.$1/log"
         {
             echo "#!/bin/sh"
-            echo "exec multilog t s25000 n4 /var/log/dbus-canbattery.$1"
+            echo "exec multilog t s500000 n4 /var/log/dbus-canbattery.$1"
         } > "/service/dbus-canbattery.$1/log/run"
         chmod 755 "/service/dbus-canbattery.$1/log/run"
 

@@ -67,6 +67,12 @@ if [ -d "$pathGuiV1" ]; then
         echo ""
         echo "Installing QML files for GUI V1..."
 
+
+        # get current Venus OS version
+        versionStringToNumber $(head -n 1 /opt/victronenergy/version)
+        ((venusVersionNumber = $versionNumber))
+
+
         # copy new PageBattery.qml if changed
         if ! cmp -s "/data/apps/dbus-serialbattery/qml/gui-v1/PageBattery.qml" "$pathGuiV1/qml/PageBattery.qml"
         then
@@ -107,10 +113,6 @@ if [ -d "$pathGuiV1" ]; then
             ((filesChanged++))
         fi
 
-
-        # get current Venus OS version
-        versionStringToNumber $(head -n 1 /opt/victronenergy/version)
-        ((venusVersionNumber = $versionNumber))
 
         # QtQick version changed with this Venus OS version
         versionStringToNumber "v3.60~18"
@@ -170,97 +172,100 @@ if [ -d "$pathGuiV2" ]; then
         echo ""
         echo "Installing QML files for GUI V2..."
 
-        # copy new PageBattery.qml if changed
-        if ! cmp -s "/data/apps/dbus-serialbattery/qml/gui-v2/PageBattery.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/PageBattery.qml"
-        then
-            echo "Copying PageBattery.qml..."
-            cp "/data/apps/dbus-serialbattery/qml/gui-v2/PageBattery.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/"
-            ((filesChanged++))
-        fi
-
-        # copy new PageBatteryCellVoltages if changed
-        if ! cmp -s "/data/apps/dbus-serialbattery/qml/gui-v2/PageBatteryCellVoltages.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/PageBatteryCellVoltages.qml"
-        then
-            echo "Copying PageBatteryCellVoltages.qml..."
-            cp "/data/apps/dbus-serialbattery/qml/gui-v2/PageBatteryCellVoltages.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/"
-            ((filesChanged++))
-        fi
-
-        # copy new PageBatteryParameters.qml if changed
-        if ! cmp -s "/data/apps/dbus-serialbattery/qml/gui-v2/PageBatteryParameters.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/PageBatteryParameters.qml"
-        then
-            echo "Copying PageBatteryParameters.qml..."
-            cp "/data/apps/dbus-serialbattery/qml/gui-v2/PageBatteryParameters.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/"
-            ((filesChanged++))
-        fi
-
-        # copy new PageBatterySettings.qml if changed
-        if ! cmp -s "/data/apps/dbus-serialbattery/qml/gui-v2/PageBatterySettings.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/PageBatterySettings.qml"
-        then
-            echo "Copying PageBatterySettings.qml..."
-            cp "/data/apps/dbus-serialbattery/qml/gui-v2/PageBatterySettings.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/"
-            ((filesChanged++))
-        fi
-
-        # copy new PageLynxIonIo.qml if changed
-        if ! cmp -s "/data/apps/dbus-serialbattery/qml/gui-v2/PageLynxIonIo.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/PageLynxIonIo.qml"
-        then
-            echo "Copying PageLynxIonIo.qml..."
-            cp "/data/apps/dbus-serialbattery/qml/gui-v2/PageLynxIonIo.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/"
-            ((filesChanged++))
-        fi
-
-
         # get current Venus OS version
         versionStringToNumber $(head -n 1 /opt/victronenergy/version)
         ((venusVersionNumber = $versionNumber))
 
-        # Some class names changed with this Venus OS version
-        versionStringToNumber "v3.60~8"
-
-        # change files in the destination folder, else the files are "broken" if upgrading to a the newer Venus OS version
-        qmlDir="$pathGuiV2/Victron/VenusOS/pages/settings/devicelist/battery"
-
-        if (( $venusVersionNumber < $versionNumber )); then
-            echo "Venus OS $(head -n 1 /opt/victronenergy/version) is older than v3.60~8. Fixing class names... "
-            fileList="$qmlDir/PageBattery.qml"
-            fileList+=" $qmlDir/PageBatteryCellVoltages.qml"
-            fileList+=" $qmlDir/PageBatteryParameters.qml"
-            fileList+=" $qmlDir/PageBatterySettings.qml"
-            fileList+=" $qmlDir/PageLynxIonIo.qml"
-            for file in $fileList ; do
-                sed -i -e 's/ListText {/ListTextItem {/' "$file"
-                sed -i -e 's/ListQuantity {/ListQuantityItem {/' "$file"
-                sed -i -e 's/ListTemperature {/ListTemperatureItem {/' "$file"
-                sed -i -e 's/ListNavigation {/ListNavigationItem {/' "$file"
-                sed -i -e 's/PrimaryListLabel {/ListLabel {/' "$file"
-                sed -i -e 's/ListText {/ListTextItem {/' "$file"
-            done
-        fi
-
         # Some property names changed with this Venus OS version
-        versionStringToNumber "v3.60~18"
+        versionStringToNumber "v3.59"
 
-        # change files in the destination folder, else the files are "broken" if upgrading to a the newer Venus OS version
-        qmlDir="$pathGuiV2/Victron/VenusOS/pages/settings/devicelist/battery"
+        if (( $venusVersionNumber <= $versionNumber )); then
+            echo "Venus OS $(head -n 1 /opt/victronenergy/version) is equal or older than v3.59."
+            sourceQmlDir="3.5x"
+            installGuiV2Check=0
+        else
+            echo "Venus OS $(head -n 1 /opt/victronenergy/version) is newer than v3.59."
+            sourceQmlDir="3.6x"
 
-        if (( $venusVersionNumber < $versionNumber )); then
-            echo "Venus OS $(head -n 1 /opt/victronenergy/version) is older than v3.60~18. Fixing property names... "
-            fileList="$qmlDir/PageBattery.qml"
-            fileList+=" $qmlDir/PageBatteryCellVoltages.qml"
-            fileList+=" $qmlDir/PageBatteryParameters.qml"
-            fileList+=" $qmlDir/PageBatterySettings.qml"
-            fileList+=" $qmlDir/PageLynxIonIo.qml"
-            for file in $fileList ; do
-                sed -i -e 's/preferredVisible:/allowed: defaultAllowed \&\&/' "$file"
-            done
+            # Min supported beta version
+            versionStringToNumber "v3.60~39"
 
-            echo "Venus OS $(head -n 1 /opt/victronenergy/version) is older than v3.60~18. Fixing battery object... "
-            sed -i -e 's/required property string bindPrefix/property string bindPrefix: battery.serviceUid/' "$qmlDir/PageBattery.qml"
-            sed -i -e '/Device {/{N;N;N;s/Device {\n\t\tid: battery\n\t\tserviceUid: root.bindPrefix\n\t}/property var battery/}' "$qmlDir/PageBattery.qml"
+            if (( $venusVersionNumber >= $versionNumber )); then
+                echo "Venus OS $(head -n 1 /opt/victronenergy/version) is equal or newer than v3.60~39."
+                installGuiV2Check=0
+            else
+                echo "Venus OS $(head -n 1 /opt/victronenergy/version) is older than v3.60~39."
+                installGuiV2Check=1
+            fi
         fi
 
-        echo "done."
+        if [ $installGuiV2Check -ne 0 ]; then
+            echo "*** ERROR: GUIv2 installation for local display FAILED - Venus OS beta version NOT SUPPORTED anymore, update to the latest available Venus OS beta to solve this issue ***"
+        else
+
+            # copy new PageBattery.qml if changed
+            if ! cmp -s "/data/apps/dbus-serialbattery/qml/gui-v2/${sourceQmlDir}/PageBattery.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/PageBattery.qml"
+            then
+                echo "Copying PageBattery.qml..."
+                cp "/data/apps/dbus-serialbattery/qml/gui-v2/${sourceQmlDir}/PageBattery.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/"
+                ((filesChanged++))
+            fi
+
+            # copy new PageBatteryCellVoltages if changed
+            if ! cmp -s "/data/apps/dbus-serialbattery/qml/gui-v2/${sourceQmlDir}/PageBatteryCellVoltages.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/PageBatteryCellVoltages.qml"
+            then
+                echo "Copying PageBatteryCellVoltages.qml..."
+                cp "/data/apps/dbus-serialbattery/qml/gui-v2/${sourceQmlDir}/PageBatteryCellVoltages.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/"
+                ((filesChanged++))
+            fi
+
+            # copy new PageBatteryParameters.qml if changed
+            if ! cmp -s "/data/apps/dbus-serialbattery/qml/gui-v2/${sourceQmlDir}/PageBatteryParameters.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/PageBatteryParameters.qml"
+            then
+                echo "Copying PageBatteryParameters.qml..."
+                cp "/data/apps/dbus-serialbattery/qml/gui-v2/${sourceQmlDir}/PageBatteryParameters.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/"
+                ((filesChanged++))
+            fi
+
+            # copy new PageBatterySettings.qml if changed
+            if ! cmp -s "/data/apps/dbus-serialbattery/qml/gui-v2/${sourceQmlDir}/PageBatterySettings.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/PageBatterySettings.qml"
+            then
+                echo "Copying PageBatterySettings.qml..."
+                cp "/data/apps/dbus-serialbattery/qml/gui-v2/${sourceQmlDir}/PageBatterySettings.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/"
+                ((filesChanged++))
+            fi
+
+            # copy new PageLynxIonIo.qml if changed
+            if ! cmp -s "/data/apps/dbus-serialbattery/qml/gui-v2/${sourceQmlDir}/PageLynxIonIo.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/PageLynxIonIo.qml"
+            then
+                echo "Copying PageLynxIonIo.qml..."
+                cp "/data/apps/dbus-serialbattery/qml/gui-v2/${sourceQmlDir}/PageLynxIonIo.qml" "/opt/victronenergy/gui-v2/Victron/VenusOS/pages/settings/devicelist/battery/"
+                ((filesChanged++))
+            fi
+
+
+            # Some property names changed with this Venus OS version
+            # NOTE: currently only preserved for future use and not reachable in code
+            versionStringToNumber "v0.10~1"
+
+            # change files in the destination folder, else the files are "broken" if upgrading to a the newer Venus OS version
+            qmlDir="$pathGuiV2/Victron/VenusOS/pages/settings/devicelist/battery"
+
+            if (( $venusVersionNumber < $versionNumber )); then
+                echo "Venus OS $(head -n 1 /opt/victronenergy/version) is older than v3.60~25. Fixing object names... "
+                fileList="$qmlDir/PageBattery.qml"
+                fileList+=" $qmlDir/PageBatteryCellVoltages.qml"
+                fileList+=" $qmlDir/PageBatteryParameters.qml"
+                fileList+=" $qmlDir/PageBatterySettings.qml"
+                fileList+=" $qmlDir/PageLynxIonIo.qml"
+                for file in $fileList ; do
+                    sed -i -e 's/model: ObjectModel/model: VisibleItemModel/' "$file"
+                done
+            fi
+
+            echo "done."
+
+        fi
 
     fi
 
@@ -282,6 +287,7 @@ fi
 hash_online=$(curl -s "https://raw.githubusercontent.com/mr-manuel/venus-os_dbus-serialbattery_gui-v2/refs/heads/master/venus-gui-v2.wasm.sha256")
 
 # Check if hash_online contains "venus-gui-v2.wasm", if not the online request failed
+echo ""
 if [[ "$hash_online" == *"venus-gui-v2.wasm"* ]]; then
 
     # Check if latest version is already available offline
@@ -304,9 +310,13 @@ if [[ "$hash_online" == *"venus-gui-v2.wasm"* ]]; then
             # check if download was successful
             if [ $? -ne 0 ]; then
                 echo "ERROR: Download of hash file for GUIv2 web version failed."
+            else
+                echo "Download of GUIv2 web version successful."
             fi
         fi
 
+    else
+        echo "Latest version of GUIv2 web version is already downloaded."
     fi
 
 else
@@ -314,6 +324,7 @@ else
 fi
 
 # Check if offline version is already installed
+echo ""
 if [ -f "/data/apps/dbus-serialbattery/ext/venus-os_dbus-serialbattery_gui-v2/venus-gui-v2.wasm.sha256" ]; then
     hash_available=$(cat "/data/apps/dbus-serialbattery/ext/venus-os_dbus-serialbattery_gui-v2/venus-gui-v2.wasm.sha256")
 else
@@ -326,7 +337,6 @@ if [ "$hash_installed" != "$hash_available" ]; then
         echo "GUIv2 web version was not installed."
     else
 
-        echo ""
         echo "Installing GUIv2 web version..."
 
         # Check if file is available
@@ -368,7 +378,8 @@ if [ "$hash_installed" != "$hash_available" ]; then
         fi
 
     fi
-
+else
+    echo "Latest version of GUIv2 web version is already installed."
 fi
 
 

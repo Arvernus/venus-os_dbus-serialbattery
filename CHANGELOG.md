@@ -51,8 +51,12 @@
   * Changes to `config.default.ini`: `TEMP_4_NAME` was replaced by `TEMPERATURE_4_NAME`
 
 ### What's Changed
+* Added: BLE - Config settings do enable/disable `BLUETOOTH_USE_POLLING` and `BLUETOOTH_FORCE_RESET_BLE_STACK` by @mr-manuel
+* Added: BLE - Error message if BLE `BMS_TYPE` was misspelled by @mr-manuel
+* Added: BLE - Error message if BLE address is missing by @mr-manuel
 * Added: Calculation of history values not provided by the battery by @mr-manuel
 * Added: Charge/Discharge current limitation by MOSFET temperature by @mr-manuel
+* Added: Daly CAN - Read capacity with https://github.com/mr-manuel/venus-os_dbus-serialbattery/pull/217 from @atillack
 * Added: Error handling for `config.ini` by @mr-manuel
 * Added: Felicity BMS by @versager
 * Added: JKBMS CAN - Extended protocol with version V2 by @Hooorny and @mr-manuel
@@ -63,8 +67,11 @@
 * Added: Pace BMS by @KoljaWindeler
 * Added: Possibility to add external sensor for SoC by @mr-manuel
 * Added: Signal handler for clean service restart/shutdown by @mr-manuel
+* Added: UBMS CAN - support for Valence U-BMS by @gimx
 * Changed: A lot of under the hood optimizations by @mr-manuel
 * Changed: Apply `SOC_RESET_VOLTAGE` after `SOC_RESET_AFTER_DAYS` regardless of whether the battery is in absorption, bulk, or float mode https://github.com/mr-manuel/venus-os_dbus-serialbattery/issues/123 by @mr-manuel
+* Changed: BLE - Reworked log notifications be more helpful by @mr-manuel
+* Changed: BLE - Reworked installation for external Bluetooth USB dongle by @Felixrising & @mr-manuel
 * Changed: Consumed capacity must be negative values by @mr-manuel
 * Changed: Daly CAN - Driver improvements by @transistorgit
 * Changed: Daly CAN - Refactored driver to match new CAN standard by @mr-manuel and @transistorgit
@@ -78,13 +85,16 @@
 * Changed: Fixed Seplos V3 cell balance status with https://github.com/mr-manuel/venus-os_dbus-serialbattery/pull/213 by @marcelrv
 * Changed: Fixed serial port handling with https://github.com/mr-manuel/venus-os_dbus-serialbattery/pull/211 by @WaldemarFech
 * Changed: Improved driver and `config.default.ini` descriptions by @mr-manuel
+* Changed: JKBMS BLE - Reworked code by @mr-manuel
 * Changed: JKBMS CAN - Per default only address 0 is recognized. Change `BATTERY_ADDRESS` to match your device address by @Hooorny and @mr-manuel
 * Changed: Licensing from MIT license to GNU AGPLv3 license by @mr-manuel
+* Changed: LLT/JBD BLE - Fixed initial connection by @mr-manuel
 * Changed: Refactored driver installation via USB/SD card by @mr-manuel
 * Changed: Renamed `install-qml.sh` to `custom-gui-install.sh` by @mr-manuel
 * Changed: Renamed `reinstall-local.sh` to `enable.sh` by @mr-manuel
 * Changed: Renamed `restart-driver.sh` to `restart.sh` by @mr-manuel
 * Changed: Renamed `restore-gui.sh` to `custom-gui-uninstall.sh` by @mr-manuel
+* Changed: Show data validation mismatches in the log by @mr-manuel
 * Changed: The driver is now running directly from it's app folder. No need to copy the `config.ini` file anywhere, which means changes are applied by simply restarting the service by @mr-manuel
 * Changed: The root filesystem is not mounted as read-write anymore, since overlay filesystems are used now. This allows to let the core system files untouched and to revert all changes with one command. The changes are now also persistant and do not have to be installed on every Venus OS update again by @mr-manuel
 * Changed: The setting `CELL_VOLTAGE_DIFF_KEEP_MAX_VOLTAGE_TIME_RESTART` was superseeded by `SWITCH_TO_FLOAT_CELL_VOLTAGE_DEVIATION`, which has a different behavior by @mr-manuel
@@ -110,6 +120,7 @@
 * Changed: The setting `TEMPERATURE_SOURCE_BATTERY` is now a list of temperature sensors, so you can choose which sensors you want to use by @mr-manuel
 * Changed: Use corrected current for both normal current and SOC calculation if `SOC_CALCULATION` is enabled by @mr-manuel
 * Changed: When `SOC_CALCULATION` is enabled, the SoC is reset to 100%, if the battery switches to float. Old options were removed by @mr-manuel
+* Removed: BLE - Duplicated not found message by @mr-manuel
 * Removed: The setting `SOC_RESET_CURRENT` was removed in the `config.default.ini` by @mr-manuel
 * Removed: The setting `SOC_RESET_TIME` was removed in the `config.default.ini` by @mr-manuel
 
