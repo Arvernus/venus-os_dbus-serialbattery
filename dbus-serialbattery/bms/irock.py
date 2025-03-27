@@ -230,8 +230,6 @@ class iRock(Battery):
         # Mandatory values to set
         answer: bool = True
         answer = self.get_field("voltage", answer)
-        answer = self.get_field("current", answer)
-        answer = self.get_field("soc", answer)
         answer = self.get_field("soh", answer)
         answer = self.get_field("temperature_1", answer)
         if not answer:
@@ -240,6 +238,8 @@ class iRock(Battery):
         # Set initially because they are optional values for this BMS
         answer = self.get_field("charge_fet", answer)
         answer = self.get_field("discharge_fet", answer)
+        answer = self.get_field("current", answer)
+        answer = self.get_field("soc", answer)
         # Optional values to set
         answer = self.get_field("capacity_remain", answer)
         answer = self.get_field("temperature_2", answer)
