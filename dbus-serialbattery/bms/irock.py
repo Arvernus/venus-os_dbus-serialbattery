@@ -68,7 +68,18 @@ IROCK_TO_LOCAL_FIELD_NAMES: Dict[str, str] = {
     "Production": "production",
     "Custom_Field": "custom_field",
     "SOH": "soh",
-    "Balance_FET": "balance_fet"
+    "Balance_FET": "balance_fet",
+    "Allow_Charge": "control_allow_charge",
+    "Allow_Discharge": "control_allow_discharge",
+    "Low_Voltage_Alarm": "protection.low_voltage",
+    "High_Voltage_Alarm": "protection.high_voltage",
+    "Low_Cell_Voltage_Alarm": "protection.low_cell_voltage",
+    "High_Cell_Voltage_Alarm": "protection.high_cell_voltage",
+    "Low_SOC_Alarm": "protection.low_soc",
+    "High_Charge_Current_Alarm": "protection.high_charge_current",
+    "High_Discharge_Current_Alarm": "protection.high_discharge_current",
+    "Temperature_Alarm": "protection.high_temperature"
+    
 }
 
 IROCK_MODBUS_REGISTERS = [
