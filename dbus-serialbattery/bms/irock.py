@@ -131,7 +131,7 @@ class iRock(Battery):
         self.discharge_fet: bool = True
         self.current: float = 0
         self.soc: float = 0
-        self.soh: float = 0
+        self.soh: float = 100
         self.temperature_1: float = 0
     
     def custom_name(self) -> str:
@@ -306,10 +306,10 @@ class iRock(Battery):
         """
         Get the Modbus version for the iRock battery.
         """
-        mbdev = mbdevs[int.from_bytes(address, byteorder="big")]
         try:
             with port_locks[self.port]:
                 with address_locks[self.address]:
+                    mbdev = mbdevs[int.from_bytes(address, byteorder="big")]
                     modbus_version = Version.coerce(str(mbdev.read_string(1, 8).strip('\x00')))
                     if modbus_version is None:
                         logger.error("Can't get iRock Modbus Version")
@@ -325,9 +325,9 @@ class iRock(Battery):
 
     @timed_lru_cache(minutes=2)
     def get_modbus_hw_support(self, address: int) -> bool:
-        mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
         with port_locks[self.port]:
             with address_locks[self.address]:
+                mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
                 try:
                     result = mbdev.read_bit(address, 1)
                     return result != 0
@@ -337,10 +337,10 @@ class iRock(Battery):
 
     def get_modbus_value(self, address: int, type: str, size: int = 1) -> Any:
         # TODO: Arrays are only supported for CHAR
-        mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
         type = BaseType(type)
         with port_locks[self.port]:
             with address_locks[self.address]:
+                mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
                 try:
                     result = None
                     if type == BaseType.CHAR:
