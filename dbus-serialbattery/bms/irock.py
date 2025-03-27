@@ -131,6 +131,8 @@ class iRock(Battery):
         self.discharge_fet: bool = True
         self.current: float = 0
         self.soc: float = 0
+        self.soh: float = 0
+        self.temperature_1: float = 0
     
     def custom_name(self) -> str:
         """
@@ -232,8 +234,6 @@ class iRock(Battery):
         # Mandatory values to set
         answer: bool = True
         answer = self.get_field("voltage", answer)
-        answer = self.get_field("soh", answer)
-        answer = self.get_field("temperature_1", answer)
         if not answer:
             logger.error(f"Can't get iRock status")
             return False
@@ -242,6 +242,8 @@ class iRock(Battery):
         answer = self.get_field("discharge_fet", answer)
         answer = self.get_field("current", answer)
         answer = self.get_field("soc", answer)
+        answer = self.get_field("soh", answer)
+        answer = self.get_field("temperature_1", answer)
         # Optional values to set
         answer = self.get_field("capacity_remain", answer)
         answer = self.get_field("temperature_2", answer)
