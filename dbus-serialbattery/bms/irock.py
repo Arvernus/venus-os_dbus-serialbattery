@@ -150,6 +150,7 @@ class iRock(Battery):
                 mbdevs[int.from_bytes(self.address, byteorder="big")] = mbdev
         try:
             found = self.get_field("hardware_name", found)
+            found = self.get_field("serial_number", found)
             if self.hardware_name is not None:
                 self.type = self.hardware_name
                 self.custom_name()
