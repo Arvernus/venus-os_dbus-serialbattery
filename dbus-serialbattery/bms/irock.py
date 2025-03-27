@@ -129,6 +129,8 @@ class iRock(Battery):
         self.hardware_name: str = None
         self.charge_fet: bool = True
         self.discharge_fet: bool = True
+        self.current: float = 0
+        self.soc: float = 0
     
     def custom_name(self) -> str:
         """
