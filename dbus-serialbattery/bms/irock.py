@@ -335,7 +335,7 @@ class iRock(Battery):
                     logger.warning(f"Can't read iRock HW Support Coil: {e}")
         return False
 
-    def get_modbus_value(self, address: int, type: str, size: int = 1):
+    def get_modbus_value(self, address: int, type: str, size: int = 1) -> Any:
         # TODO: Arrays are only supported for CHAR
         mbdev = mbdevs[int.from_bytes(self.address, byteorder="big")]
         type = BaseType(type)
@@ -344,25 +344,26 @@ class iRock(Battery):
                 try:
                     result = None
                     if type == BaseType.CHAR:
-                        result = mbdev.read_string(address, int(size/2 + 0.5))  # Round Up
+                        result: str = mbdev.read_string(address, int(size/2 + 0.5))  # Round Up
+                        result = result.replace("\x00", "")
                     elif type == BaseType.INT16:
-                        result = mbdev.read_register(address, signed=True)
+                        result: int = mbdev.read_register(address, signed=True)
                     elif type == BaseType.UINT16:
-                        result = mbdev.read_register(address)
+                        result: int = mbdev.read_register(address)
                     elif type == BaseType.INT32:
-                        result = mbdev.read_long(address, signed=True)
+                        result: int = mbdev.read_long(address, signed=True)
                     elif type == BaseType.UINT32:
-                        result = mbdev.read_long(address)
+                        result: int = mbdev.read_long(address)
                     elif type == BaseType.INT64:
-                        result = mbdev.read_long(address, signed=True, number_of_registers=4)
+                        result: int = mbdev.read_long(address, signed=True, number_of_registers=4)
                     elif type == BaseType.UINT64:
-                        result = mbdev.read_long(address, number_of_registers=4)
+                        result: int = mbdev.read_long(address, number_of_registers=4)
                     elif type == BaseType.FLOAT32:
-                        result = mbdev.read_float(address, number_of_registers=2, byteorder=minimalmodbus.BYTEORDER_LITTLE_SWAP)
+                        result: float = mbdev.read_float(address, number_of_registers=2, byteorder=minimalmodbus.BYTEORDER_LITTLE_SWAP)
                     elif type == BaseType.FLOAT64:
-                        result = mbdev.read_float(address, number_of_registers=4, byteorder=minimalmodbus.BYTEORDER_LITTLE_SWAP)
+                        result: float = mbdev.read_float(address, number_of_registers=4, byteorder=minimalmodbus.BYTEORDER_LITTLE_SWAP)
                     elif type == BaseType.BOOL:
-                        result = mbdev.read_register(address) != 0
+                        result: bool = mbdev.read_register(address) != 0
                     if result is None:
                         logger.warning(f"iRock field type {type} not supported")
                     return result
