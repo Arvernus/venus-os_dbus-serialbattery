@@ -127,6 +127,8 @@ class iRock(Battery):
         self.type = self.BATTERYTYPE
         self.serial_number: str = None
         self.hardware_name: str = None
+        self.charge_fet: bool = True
+        self.discharge_fet: bool = True
     
     def custom_name(self) -> str:
         """
@@ -232,11 +234,12 @@ class iRock(Battery):
         answer = self.get_field("soc", answer)
         answer = self.get_field("soh", answer)
         answer = self.get_field("temperature_1", answer)
-        answer = self.get_field("charge_fet", answer)
-        answer = self.get_field("discharge_fet", answer)
         if not answer:
             logger.error(f"Can't get iRock status")
             return False
+        # Set initially because they are optional values for this BMS
+        answer = self.get_field("charge_fet", answer)
+        answer = self.get_field("discharge_fet", answer)
         # Optional values to set
         answer = self.get_field("capacity_remain", answer)
         answer = self.get_field("temperature_2", answer)
